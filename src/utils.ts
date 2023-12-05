@@ -79,10 +79,10 @@ export function bundleToBytes(bundle: IBundle): string {
 
 
 
-export async function createConfidentialComputeRecord(
+export function createConfidentialComputeRecord(
 	tx: Transaction,
 	executionNodeAddr: string, 
-): Promise<ConfidentialComputeRecord> {
+): ConfidentialComputeRecord {
 	const nonce = tx.nonce
 	const gasPrice = tx.isLondon() ? tx.maxFeePerGas : tx.gasPrice
 	if (!gasPrice)
