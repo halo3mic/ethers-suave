@@ -1,5 +1,5 @@
 import { ConfidentialComputeRecord } from './confidential-types'
-import { ethers, BigNumberish, Wallet } from 'ethers'
+import { ethers, BigNumberish, Wallet, Transaction } from 'ethers'
 
 
 export interface IBundle {
@@ -59,6 +59,10 @@ export function removeLeadingZeros(hex: string): string {
 	return '0x' + hex.slice(2).replace(/^00+/, '')
 }
 
+export function txToBundleBytes(signedTx): string {
+	return bundleToBytes(txToBundle(signedTx))
+}
+
 
 export function txToBundle(signedTx): IBundle {
 	return {
@@ -73,24 +77,29 @@ export function bundleToBytes(bundle: IBundle): string {
 	return confidentialDataBytes
 }
 
+
+
 export async function createConfidentialComputeRecord(
-	suaveSigner: Wallet, 
-	calldata: string, 
+	tx: Transaction,
 	executionNodeAddr: string, 
-	recipient: string,
-	options: any = {} // todo: restrict
 ): Promise<ConfidentialComputeRecord> {
-	const suaveNonce = await suaveSigner.getNonce()
-	const chainId = await suaveSigner.provider?.getNetwork().then(x => x.chainId) // todo: rm 
+	const nonce = tx.nonce
+	const gasPrice = tx.isLondon() ? tx.maxFeePerGas : tx.gasPrice
+	if (!gasPrice)
+		throw new Error('Invalid gas price')
+	const gas = tx.gasLimit
+	const to = tx.to || ethers.ZeroAddress
+	const value = tx.value
+	const data = tx.data
+	const chainId = '0x' + tx.chainId.toString(16)
 	return {
-		chainId,
-		nonce: suaveNonce,
-		to: recipient,
-		value: ethers.parseEther('0'),
-		gas: ethers.toBigInt(2000000),
-		gasPrice: ethers.parseUnits('20', 'gwei'),
-		data: calldata, 
 		executionNode: executionNodeAddr,
-		...options
+		nonce, 
+		gasPrice,
+		gas,
+		to,
+		value,
+		data,
+		chainId,
 	}
 }
