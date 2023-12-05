@@ -6,7 +6,7 @@ import {
 } from './const'
 
 
-type SigSplit = {
+export type SigSplit = {
     r: string,
     s: string,
     v: number,
@@ -49,12 +49,20 @@ export class ConfidentialComputeRequest {
 		return encodedWithPrefix
 	}
 
+	async signWithAsyncCallback(callback: (hash: string) => Promise<SigSplit>): Promise<ConfidentialComputeRequest> {
+		return callback(this._hash()).then(({ v, s, r }) => {
+			this.confidentialComputeRecord.r = removeLeadingZeros(r)
+			this.confidentialComputeRecord.s = removeLeadingZeros(s)
+			this.confidentialComputeRecord.v = Number(v) == 27 ? '0x' : '0x01'
+			return this
+		})
+	}
+
     signWithCallback(callback: (hash: string) => SigSplit): ConfidentialComputeRequest {
-        const hash = '0x' + this._hash().slice(2)
-        const { v, s, r } = callback(hash)
+        const { v, s, r } = callback(this._hash())
         this.confidentialComputeRecord.r = removeLeadingZeros(r)
         this.confidentialComputeRecord.s = removeLeadingZeros(s)
-        this.confidentialComputeRecord.v = parseHexArg(v)
+        this.confidentialComputeRecord.v = Number(v) == 27 ? '0x' : '0x01'
 
 		return this
 	}
