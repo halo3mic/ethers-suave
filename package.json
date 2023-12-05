@@ -1,0 +1,10 @@
+{
+  "name": "ethers-suave",
+  "version": "1.0.0",
+  "author": "Miha Lotric",
+  "license": "MIT",
+  "dependencies": {
+    "ethers": "^6.9.0",
+    "typescript": "^5.3.2"
+  }
+}
