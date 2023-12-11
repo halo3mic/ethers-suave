@@ -1,5 +1,5 @@
 import { ConfidentialComputeRecord } from './confidential-types'
-import { ethers, BigNumberish, Wallet, Transaction } from 'ethers'
+import { ethers, BigNumberish, Transaction } from 'ethers'
 
 
 export interface IBundle {
@@ -15,25 +15,23 @@ export function parseHexArg(arg: null | BigNumberish): string {
 	if (!arg) { // 0, null, undefined, ''
 		return '0x'
 	}
-  
-	if (typeof arg === 'object' && 'toHexString' in arg) {
-		const x = (arg as any).toHexString()
-		return x == '0x00' ? '0x' : x
+	if (typeof arg === 'object' && 'toHexString' in (arg as any)) {
+		arg = (arg as any).toHexString()
 	}
   
 	switch (typeof arg) {
-	case 'number':
-	case 'bigint':
-		return intToHex(arg)
-	case 'string':
-		if (ethers.isHexString(arg)) {
-			return arg
-		} else {
-			throw new Error(`Invalid hex string: ${arg}`)
+		case 'number':
+		case 'bigint':
+			return intToHex(arg)
+		case 'string':
+			if (ethers.isHexString(arg)) {
+				return arg == '0x00' ? '0x' : arg
+			} else {
+				throw new Error(`Invalid hex string: ${arg}`)
+			}
+		default:
+			return '0x'
 		}
-	default:
-		return '0x'
-	}
 }
 
 export function intToHex(intVal: number | bigint): string {
@@ -49,10 +47,7 @@ export function intToHex(intVal: number | bigint): string {
 }
 
 export function hexFillZero(hex: string): string {
-	if (hex.length % 2 != 0) {
-		hex = '0x0' + hex.slice(2)
-	}
-	return hex
+	return '0x' + hex.slice(2).padStart(64, '0')
 }
 
 export function removeLeadingZeros(hex: string): string {
@@ -62,7 +57,6 @@ export function removeLeadingZeros(hex: string): string {
 export function txToBundleBytes(signedTx): string {
 	return bundleToBytes(txToBundle(signedTx))
 }
-
 
 export function txToBundle(signedTx): IBundle {
 	return {
@@ -77,11 +71,9 @@ export function bundleToBytes(bundle: IBundle): string {
 	return confidentialDataBytes
 }
 
-
-
 export function createConfidentialComputeRecord(
 	tx: Transaction,
-	executionNodeAddr: string, 
+	executionNode: string, 
 ): ConfidentialComputeRecord {
 	const nonce = tx.nonce
 	const gasPrice = tx.isLondon() ? tx.maxFeePerGas : tx.gasPrice
@@ -93,7 +85,7 @@ export function createConfidentialComputeRecord(
 	const data = tx.data
 	const chainId = '0x' + tx.chainId.toString(16)
 	return {
-		executionNode: executionNodeAddr,
+		executionNode,
 		nonce, 
 		gasPrice,
 		gas,
