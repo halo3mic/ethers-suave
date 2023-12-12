@@ -1,5 +1,5 @@
 import { expect } from 'chai'
-import { parseHexArg, hexFillZero } from '../src/utils'
+import { parseHexArg, hexFill32 } from '../src/utils'
 
 
 describe('parseHexArg', () => {
@@ -64,7 +64,7 @@ describe('parseHexArg', () => {
 describe('utils', () => {
 
     it('hexFillZero', () => {
-        expect(hexFillZero('0x3618e711cb980ccec6da1250624f4439df9c10e19da047cb6e4c7d0b7f3be'))
+        expect(hexFill32('0x3618e711cb980ccec6da1250624f4439df9c10e19da047cb6e4c7d0b7f3be'))
             .to.eq('0x0003618e711cb980ccec6da1250624f4439df9c10e19da047cb6e4c7d0b7f3be')
 
     })

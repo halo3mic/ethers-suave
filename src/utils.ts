@@ -1,5 +1,5 @@
 import { ConfidentialComputeRecord } from './confidential-types'
-import { ethers, BigNumberish, Transaction } from 'ethers'
+import { ethers, BigNumberish, TransactionRequest } from 'ethers'
 
 
 export interface IBundle {
@@ -8,7 +8,7 @@ export interface IBundle {
 }
 
 export function keccak256(x: string): string {
-	return hexFillZero(ethers.keccak256(x))
+	return hexFill32(ethers.keccak256(x))
 }
 
 export function parseHexArg(arg: null | BigNumberish): string {
@@ -25,7 +25,7 @@ export function parseHexArg(arg: null | BigNumberish): string {
 			return intToHex(arg)
 		case 'string':
 			if (ethers.isHexString(arg)) {
-				return arg == '0x00' ? '0x' : arg
+				return arg == '0x00' ? '0x' : hexFillEven(arg)
 			} else {
 				throw new Error(`Invalid hex string: ${arg}`)
 			}
@@ -46,8 +46,12 @@ export function intToHex(intVal: number | bigint): string {
 	return '0x' + hex
 }
 
-export function hexFillZero(hex: string): string {
+export function hexFill32(hex: string): string {
 	return '0x' + hex.slice(2).padStart(64, '0')
+}
+
+export function hexFillEven(hex: string): string {
+	return hex.length % 2 ? '0x0' + hex.slice(2) : hex
 }
 
 export function removeLeadingZeros(hex: string): string {
@@ -71,17 +75,19 @@ export function bundleToBytes(bundle: IBundle): string {
 	return confidentialDataBytes
 }
 
+// todo: this is too important to be in utils
+//todo: check all properties on the function are present!!!
 export function createConfidentialComputeRecord(
-	tx: Transaction,
+	tx: TransactionRequest, // todo: TransactionLike<string>
 	executionNode: string, 
 ): ConfidentialComputeRecord {
 	const nonce = tx.nonce
-	const gasPrice = tx.isLondon() ? tx.maxFeePerGas : tx.gasPrice
+	const gasPrice = tx.maxFeePerGas || tx.gasPrice
 	if (!gasPrice)
 		throw new Error('Invalid gas price')
 	const gas = tx.gasLimit
-	const to = tx.to || ethers.ZeroAddress
-	const value = tx.value
+	const to = tx.to.toString() || ethers.ZeroAddress
+	const value = tx.value || '0x'
 	const data = tx.data
 	const chainId = '0x' + tx.chainId.toString(16)
 	return {

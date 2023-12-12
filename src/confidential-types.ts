@@ -12,11 +12,12 @@ export type SigSplit = {
     v: number,
 }
 
+// todo: option to add confidential inputs
 export class ConfidentialComputeRequest {
 	confidentialComputeRecord: ConfidentialComputeRecord
 	confidentialInputs: string
 
-	constructor(confidentialComputeRecord: ConfidentialComputeRecord, confidentialInputs: string) {
+	constructor(confidentialComputeRecord: ConfidentialComputeRecord, confidentialInputs: string = '0x') {
 		this.confidentialComputeRecord = confidentialComputeRecord
 		this.confidentialInputs = confidentialInputs
 	}
