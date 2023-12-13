@@ -1,28 +1,23 @@
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
 };
-import { Contract, JsonRpcProvider } from 'ethers';
-import chaiAsPromised from 'chai-as-promised';
-import chai from 'chai';
-import fs from 'fs';
-import { SuaveContract, SuaveProvider, SuaveWallet } from '../src';
-chai.use(chaiAsPromised);
-const { expect } = chai;
-describe('Confidential Provider/Wallet/Contract', () => __awaiter(void 0, void 0, void 0, function* () {
-    it('Non-confidential call', () => __awaiter(void 0, void 0, void 0, function* () {
-        const blockadAbi = require('./tests/abis/BlockAdAuction.json');
-        const provider = new JsonRpcProvider('https://rpc.rigil.suave.flashbots.net');
+Object.defineProperty(exports, "__esModule", { value: true });
+const ethers_1 = require("ethers");
+const chai_as_promised_1 = __importDefault(require("chai-as-promised"));
+const chai_1 = __importDefault(require("chai"));
+const src_1 = require("../src");
+chai_1.default.use(chai_as_promised_1.default);
+const { expect } = chai_1.default;
+describe('Confidential Provider/Wallet/Contract', async () => {
+    it('Non-confidential call', async () => {
+        const blockadAbi = require('./abis/BlockAdAuction.json');
+        const provider = new ethers_1.JsonRpcProvider('https://rpc.rigil.suave.flashbots.net');
         const blockadAddress = '0xee9794177378e98268b30Ca14964f2FDFc71bD6D';
-        const BlockAd = new Contract(blockadAddress, blockadAbi, provider);
-        const isInitialized = yield BlockAd.isInitialized();
+        const BlockAd = new ethers_1.Contract(blockadAddress, blockadAbi, provider);
+        const isInitialized = await BlockAd.isInitialized();
         expect(isInitialized).to.be.true;
-    }));
+    });
     // it('Confidential send response', async () => {
     //     const pk = '1111111111111111111111111111111111111111111111111111111111111111'
     //     const executionNode = '0x03493869959c866713c33669ca118e774a30a0e5'
@@ -39,24 +34,24 @@ describe('Confidential Provider/Wallet/Contract', () => __awaiter(void 0, void 0
     //     expect(crq).to.have.property('requestRecord')
     //     expect(crq).to.have.property('confidentialComputeResult')
     // }).timeout(100000)
-    it('Confidential err response', () => __awaiter(void 0, void 0, void 0, function* () {
+    it('Confidential err response', async () => {
         const pk = '1111111111111111111111111111111111111111111111111111111111111111';
         const executionNode = '0x03493869959c866713c33669ca118e774a30a0e5';
         const executionNodeUrl = 'https://rpc.rigil.suave.flashbots.net';
-        const blockadAbi = require('./tests/abis/BlockAdAuction.json');
-        const provider = new SuaveProvider(executionNodeUrl, executionNode);
-        const wallet = new SuaveWallet(pk, provider);
+        const blockadAbi = require('./abis/BlockAdAuction.json');
+        const provider = new src_1.SuaveProvider(executionNodeUrl, executionNode);
+        const wallet = new src_1.SuaveWallet(pk, provider);
         const blockadAddress = '0xf75e0C824Df257c02fe7493d6FF6d98F1ddab467';
-        const BlockAd = new SuaveContract(blockadAddress, blockadAbi, wallet);
+        const BlockAd = new src_1.SuaveContract(blockadAddress, blockadAbi, wallet);
         const blockLimit = 100;
         const extra = '🚀🚀';
         const confidentialInputs = '0x000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000f37b22747873223a5b22307866383636383162613836303861393666343839383661383235323038393431366632616138646630353562366536373262393364656434316665636363616261623536356230383038303264613035333266616561616165373262383636623535356635313936613936616238356432366335643233363261326439333036336635616135333838633937336433613031396231643836336664323933396231643062353962363133393665613635333164353438306134333231633833373534313537633434623532343165616265225d2c22726576657274696e67486173686573223a5b5d7d00000000000000000000000000';
         const crqPromise = BlockAd.buyAd.sendConfidentialRequest(blockLimit, extra, { confidentialInputs });
-        yield expect(crqPromise).to.eventually.be.rejectedWith(/SuaveError\('nonce too low:.*/);
-    })).timeout(100000);
-    it('confidential tx response', () => __awaiter(void 0, void 0, void 0, function* () {
-        const provider = new SuaveProvider('https://rpc.rigil.suave.flashbots.net');
-        const tx = yield provider.getConfidentialTransaction('0xafac2b381a1a4875d3407373db0bf8d27f44ac7553ce57f01dd58ea9aad13122');
+        await expect(crqPromise).to.eventually.be.rejectedWith(/SuaveError\('nonce too low:.*/);
+    }).timeout(100000);
+    it('confidential tx response', async () => {
+        const provider = new src_1.SuaveProvider('https://rpc.rigil.suave.flashbots.net');
+        const tx = await provider.getConfidentialTransaction('0xafac2b381a1a4875d3407373db0bf8d27f44ac7553ce57f01dd58ea9aad13122');
         const expected = {
             blockNumber: 708670,
             blockHash: '0x2e59f91450c0bda952db8b987f07c1fbd4c1c7d40639544ca719020ec6fc515a',
@@ -108,19 +103,16 @@ describe('Confidential Provider/Wallet/Contract', () => __awaiter(void 0, void 0
                 expect(val).eq(expected[key]);
             }
         }
-    }));
-    it('confidential wait', () => __awaiter(void 0, void 0, void 0, function* () {
-        const provider = new SuaveProvider('https://rpc.rigil.suave.flashbots.net');
-        const tx = yield provider.getConfidentialTransaction('0xafac2b381a1a4875d3407373db0bf8d27f44ac7553ce57f01dd58ea9aad13122');
-        const receipt = yield tx.wait();
+    });
+    it('confidential wait', async () => {
+        const provider = new src_1.SuaveProvider('https://rpc.rigil.suave.flashbots.net');
+        const tx = await provider.getConfidentialTransaction('0xafac2b381a1a4875d3407373db0bf8d27f44ac7553ce57f01dd58ea9aad13122');
+        const receipt = await tx.wait();
         expect(receipt).to.have.property('blockNumber').eq(708670);
         expect(receipt).to.have.property('index').eq(0);
         expect(receipt).to.have.property('gasPrice').eq(BigInt(20000000000));
         expect(receipt).to.have.property('status').eq(1);
         expect(receipt).to.have.property('type').eq(80);
-    }));
-}));
-function require(path) {
-    return JSON.parse(fs.readFileSync(path).toString());
-}
+    });
+});
 //# sourceMappingURL=suave-provider.spec.js.map

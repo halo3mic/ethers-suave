@@ -55,13 +55,10 @@ export declare class SuaveWallet extends Wallet {
     sprovider: SuaveProvider;
     constructor(privateKey: string, provider?: SuaveProvider);
 }
-interface IDynamic {
-    [key: string]: any;
-}
-export declare class SuaveContract implements IDynamic {
+export declare class SuaveContract {
+    #private;
     [k: string]: any;
     wallet: SuaveWallet;
     inner: Contract;
     constructor(address: string, abi: Interface | InterfaceAbi, wallet: SuaveWallet);
-    formatSubmissionError(error: any): void;
 }

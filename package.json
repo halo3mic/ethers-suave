@@ -1,9 +1,8 @@
 {
   "name": "ethers-suave",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "author": "Miha Lotric",
   "license": "MIT",
-  "type": "module",
   "description": "Module for interacting with Suave confidential requests.",
   "main": "dist/src/index.js",
   "types": "dist/src/index.d.ts",

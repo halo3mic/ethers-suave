@@ -1,8 +1,12 @@
-import { ethers } from 'ethers';
-export function keccak256(x) {
-    return hexFill32(ethers.keccak256(x));
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.bundleToBytes = exports.txToBundle = exports.txToBundleBytes = exports.removeLeadingZeros = exports.hexFillEven = exports.hexFill32 = exports.intToHex = exports.parseHexArg = exports.keccak256 = void 0;
+const ethers_1 = require("ethers");
+function keccak256(x) {
+    return hexFill32(ethers_1.ethers.keccak256(x));
 }
-export function parseHexArg(arg) {
+exports.keccak256 = keccak256;
+function parseHexArg(arg) {
     if (!arg) {
         return '0x';
     }
@@ -14,7 +18,7 @@ export function parseHexArg(arg) {
         case 'bigint':
             return intToHex(arg);
         case 'string':
-            if (ethers.isHexString(arg)) {
+            if (ethers_1.ethers.isHexString(arg)) {
                 return arg == '0x00' ? '0x' : hexFillEven(arg);
             }
             else {
@@ -24,7 +28,8 @@ export function parseHexArg(arg) {
             return '0x';
     }
 }
-export function intToHex(intVal) {
+exports.parseHexArg = parseHexArg;
+function intToHex(intVal) {
     let hex = intVal.toString(16);
     hex = hex.split('.')[0];
     if (hex === '0') {
@@ -35,27 +40,34 @@ export function intToHex(intVal) {
     }
     return '0x' + hex;
 }
-export function hexFill32(hex) {
+exports.intToHex = intToHex;
+function hexFill32(hex) {
     return '0x' + hex.slice(2).padStart(64, '0');
 }
-export function hexFillEven(hex) {
+exports.hexFill32 = hexFill32;
+function hexFillEven(hex) {
     return hex.length % 2 ? '0x0' + hex.slice(2) : hex;
 }
-export function removeLeadingZeros(hex) {
+exports.hexFillEven = hexFillEven;
+function removeLeadingZeros(hex) {
     return '0x' + hex.slice(2).replace(/^00+/, '');
 }
-export function txToBundleBytes(signedTx) {
+exports.removeLeadingZeros = removeLeadingZeros;
+function txToBundleBytes(signedTx) {
     return bundleToBytes(txToBundle(signedTx));
 }
-export function txToBundle(signedTx) {
+exports.txToBundleBytes = txToBundleBytes;
+function txToBundle(signedTx) {
     return {
         txs: [signedTx],
         revertingHashes: [],
     };
 }
-export function bundleToBytes(bundle) {
+exports.txToBundle = txToBundle;
+function bundleToBytes(bundle) {
     const bundleBytes = Buffer.from(JSON.stringify(bundle), 'utf8');
-    const confidentialDataBytes = ethers.AbiCoder.defaultAbiCoder().encode(['bytes'], [bundleBytes]);
+    const confidentialDataBytes = ethers_1.ethers.AbiCoder.defaultAbiCoder().encode(['bytes'], [bundleBytes]);
     return confidentialDataBytes;
 }
+exports.bundleToBytes = bundleToBytes;
 //# sourceMappingURL=utils.js.map

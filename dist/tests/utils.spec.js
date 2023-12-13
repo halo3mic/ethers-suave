@@ -1,5 +1,7 @@
-import { expect } from 'chai';
-import { parseHexArg, hexFill32 } from '../src/utils';
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const chai_1 = require("chai");
+const utils_1 = require("../src/utils");
 describe('parseHexArg', () => {
     it('parse numbers', () => {
         checkExpectations([
@@ -37,20 +39,20 @@ describe('parseHexArg', () => {
         ]);
     });
     it('parse invalid strings', () => {
-        expect(() => parseHexArg('0xzz')).to.throw();
-        expect(() => parseHexArg('2133')).to.throw();
-        expect(() => parseHexArg('x2h33')).to.throw();
+        (0, chai_1.expect)(() => (0, utils_1.parseHexArg)('0xzz')).to.throw();
+        (0, chai_1.expect)(() => (0, utils_1.parseHexArg)('2133')).to.throw();
+        (0, chai_1.expect)(() => (0, utils_1.parseHexArg)('x2h33')).to.throw();
     });
     function checkExpectations(inputToExpected) {
         for (const [input, expected] of inputToExpected) {
-            const actual = parseHexArg(input);
-            expect(actual).to.eq(expected);
+            const actual = (0, utils_1.parseHexArg)(input);
+            (0, chai_1.expect)(actual).to.eq(expected);
         }
     }
 });
 describe('utils', () => {
     it('hexFillZero', () => {
-        expect(hexFill32('0x3618e711cb980ccec6da1250624f4439df9c10e19da047cb6e4c7d0b7f3be'))
+        (0, chai_1.expect)((0, utils_1.hexFill32)('0x3618e711cb980ccec6da1250624f4439df9c10e19da047cb6e4c7d0b7f3be'))
             .to.eq('0x0003618e711cb980ccec6da1250624f4439df9c10e19da047cb6e4c7d0b7f3be');
     });
 });

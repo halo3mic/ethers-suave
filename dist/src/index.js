@@ -1,12 +1,4 @@
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
+"use strict";
 var __classPrivateFieldSet = (this && this.__classPrivateFieldSet) || function (receiver, state, value, kind, f) {
     if (kind === "m") throw new TypeError("Private method is not writable");
     if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a setter");
@@ -18,10 +10,14 @@ var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (
     if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot read private member from an object whose class did not declare it");
     return kind === "m" ? f : kind === "a" ? f.call(receiver) : f ? f.value : state.get(receiver);
 };
-var _ConfidentialTransactionResponse_provider;
-import { ConfidentialComputeRequest, ConfidentialComputeRecord } from './confidential-types';
-import { TransactionResponse, JsonRpcProvider, Contract, Wallet, } from 'ethers';
-export { ConfidentialComputeRequest, ConfidentialComputeRecord } from './confidential-types';
+var _ConfidentialTransactionResponse_provider, _SuaveContract_instances, _SuaveContract_formatSubmissionError;
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.SuaveContract = exports.SuaveWallet = exports.SuaveProvider = exports.ConfidentialComputeRecord = exports.ConfidentialComputeRequest = void 0;
+const confidential_types_1 = require("./confidential-types");
+const ethers_1 = require("ethers");
+var confidential_types_2 = require("./confidential-types");
+Object.defineProperty(exports, "ConfidentialComputeRequest", { enumerable: true, get: function () { return confidential_types_2.ConfidentialComputeRequest; } });
+Object.defineProperty(exports, "ConfidentialComputeRecord", { enumerable: true, get: function () { return confidential_types_2.ConfidentialComputeRecord; } });
 class ConfidentialCallError extends Error {
     constructor(message) {
         super(message);
@@ -52,7 +48,7 @@ class RequestRecord {
 class ConfidentialTransactionResponse {
     constructor(rawJson, provider) {
         _ConfidentialTransactionResponse_provider.set(this, void 0);
-        const formatted = new JsonRpcProvider()._wrapTransactionResponse(rawJson, null);
+        const formatted = new ethers_1.JsonRpcProvider()._wrapTransactionResponse(rawJson, null);
         const rr = new RequestRecord(rawJson.requestRecord);
         __classPrivateFieldSet(this, _ConfidentialTransactionResponse_provider, provider, "f");
         this.blockNumber = formatted.blockNumber;
@@ -75,64 +71,62 @@ class ConfidentialTransactionResponse {
         this.confidentialComputeResult = rawJson.confidentialComputeResult;
     }
     wait(confirmations = 1, timeout) {
-        return new TransactionResponse(this, __classPrivateFieldGet(this, _ConfidentialTransactionResponse_provider, "f")).wait(confirmations, timeout);
+        return new ethers_1.TransactionResponse(this, __classPrivateFieldGet(this, _ConfidentialTransactionResponse_provider, "f")).wait(confirmations, timeout);
     }
 }
 _ConfidentialTransactionResponse_provider = new WeakMap();
-export class SuaveProvider extends JsonRpcProvider {
+class SuaveProvider extends ethers_1.JsonRpcProvider {
     constructor(url, executionNode = null) {
         super(url);
         this.executionNode = executionNode;
     }
-    getConfidentialTransaction(hash) {
-        const _super = Object.create(null, {
-            send: { get: () => super.send }
-        });
-        return __awaiter(this, void 0, void 0, function* () {
-            const raw = yield _super.send.call(this, 'eth_getTransactionByHash', [hash]);
-            return new ConfidentialTransactionResponse(raw, this);
-        });
+    async getConfidentialTransaction(hash) {
+        const raw = await super.send('eth_getTransactionByHash', [hash]);
+        return new ConfidentialTransactionResponse(raw, this);
     }
 }
-export class SuaveWallet extends Wallet {
+exports.SuaveProvider = SuaveProvider;
+class SuaveWallet extends ethers_1.Wallet {
     constructor(privateKey, provider) {
         super(privateKey, provider);
         this.sprovider = provider;
     }
 }
-export class SuaveContract {
+exports.SuaveWallet = SuaveWallet;
+class SuaveContract {
     constructor(address, abi, wallet) {
-        this.inner = new Contract(address, abi, wallet);
+        _SuaveContract_instances.add(this);
+        this.inner = new ethers_1.Contract(address, abi, wallet);
         this.wallet = wallet;
         return new Proxy(this, {
             get: (target, prop, receiver) => {
                 const item = Reflect.get(target.inner, prop, receiver);
                 if (typeof item === 'function' && target.inner.interface.hasFunction(prop)) {
                     const extendedMethod = item;
-                    const prepareConfidentialRequest = (...args) => __awaiter(this, void 0, void 0, function* () {
+                    const prepareConfidentialRequest = async (...args) => {
                         const overrides = args[args.length - 1];
-                        const contractTx = yield extendedMethod.populateTransaction(...args);
+                        const contractTx = await extendedMethod.populateTransaction(...args);
                         contractTx.type = 0;
                         contractTx.gasLimit = BigInt(overrides.gasLimit || 1e7);
-                        const filledTx = yield target.wallet.populateTransaction(contractTx);
+                        const filledTx = await target.wallet.populateTransaction(contractTx);
                         if (wallet.sprovider.executionNode === null) {
                             throw new Error('No execution node set');
                         }
-                        const crc = new ConfidentialComputeRecord(filledTx, wallet.sprovider.executionNode);
-                        const crq = new ConfidentialComputeRequest(crc, overrides.confidentialInputs);
+                        const crc = new confidential_types_1.ConfidentialComputeRecord(filledTx, wallet.sprovider.executionNode);
+                        const crq = new confidential_types_1.ConfidentialComputeRequest(crc, overrides.confidentialInputs);
                         return crq;
-                    });
+                    };
                     extendedMethod.prepareConfidentialRequest = prepareConfidentialRequest;
-                    extendedMethod.sendConfidentialRequest = (...args) => __awaiter(this, void 0, void 0, function* () {
-                        const crq = (yield prepareConfidentialRequest(...args))
+                    extendedMethod.sendConfidentialRequest = async (...args) => {
+                        const crq = (await prepareConfidentialRequest(...args))
                             .signWithWallet(target.wallet)
                             .rlpEncode();
                         const sprovider = target.wallet.sprovider;
-                        const txhash = yield sprovider.send('eth_sendRawTransaction', [crq])
-                            .catch(target.formatSubmissionError.bind(target));
-                        const txRes = yield sprovider.getConfidentialTransaction(txhash);
+                        const txhash = await sprovider.send('eth_sendRawTransaction', [crq])
+                            .catch(__classPrivateFieldGet(target, _SuaveContract_instances, "m", _SuaveContract_formatSubmissionError).bind(target));
+                        const txRes = await sprovider.getConfidentialTransaction(txhash);
                         return txRes;
-                    });
+                    };
                     return extendedMethod;
                 }
                 return item;
@@ -142,27 +136,28 @@ export class SuaveContract {
             }
         });
     }
-    formatSubmissionError(error) {
-        var _a, _b;
-        const errMsg = (_a = error === null || error === void 0 ? void 0 : error.error) === null || _a === void 0 ? void 0 : _a.message;
-        if (!errMsg) {
-            throw new Error('Unknown error');
-        }
-        const re = /^execution reverted: (?<msg>0x([0-f][0-f])*)/;
-        const errSlice = (_b = errMsg.match(re).groups) === null || _b === void 0 ? void 0 : _b.msg;
-        if (!errSlice) {
-            throw new Error(errMsg);
-        }
-        let parsedErr;
-        try {
-            parsedErr = this.inner.interface.parseError(errSlice);
-        }
-        catch (_c) {
-            throw new Error(errMsg);
-        }
-        const fargs = parsedErr.args.join('\', \'');
-        const fmsg = `${parsedErr.name}('${fargs}')\n`;
-        throw new ConfidentialCallError(fmsg);
-    }
 }
+exports.SuaveContract = SuaveContract;
+_SuaveContract_instances = new WeakSet(), _SuaveContract_formatSubmissionError = function _SuaveContract_formatSubmissionError(error) {
+    var _a, _b;
+    const errMsg = (_a = error === null || error === void 0 ? void 0 : error.error) === null || _a === void 0 ? void 0 : _a.message;
+    if (!errMsg) {
+        throw new Error('Unknown error');
+    }
+    const re = /^execution reverted: (?<msg>0x([0-f][0-f])*)/;
+    const errSlice = (_b = errMsg.match(re).groups) === null || _b === void 0 ? void 0 : _b.msg;
+    if (!errSlice) {
+        throw new Error(errMsg);
+    }
+    let parsedErr;
+    try {
+        parsedErr = this.inner.interface.parseError(errSlice);
+    }
+    catch (_c) {
+        throw new Error(errMsg);
+    }
+    const fargs = parsedErr.args.join('\', \'');
+    const fmsg = `${parsedErr.name}('${fargs}')\n`;
+    throw new ConfidentialCallError(fmsg);
+};
 //# sourceMappingURL=index.js.map

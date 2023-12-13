@@ -137,7 +137,7 @@ interface ExtendedContractMethod extends BaseContractMethod<any[], any, any> {
 }
 
 export class SuaveContract {
-	[k: string]: ExtendedContractMethod | SuaveWallet | Contract;
+	[k: string]: any;
 	wallet: SuaveWallet
 	inner: Contract
 

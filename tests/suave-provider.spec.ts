@@ -1,7 +1,6 @@
 import { Contract, JsonRpcProvider } from 'ethers'
 import chaiAsPromised from 'chai-as-promised'
 import chai from 'chai'
-import fs from 'fs'
 
 import { SuaveContract, SuaveProvider, SuaveWallet } from 'ethers-suave'
 
@@ -12,7 +11,7 @@ const { expect } = chai
 describe('Confidential Provider/Wallet/Contract', async () => {
 
 	it('Non-confidential call', async () => {
-		const blockadAbi = require('./tests/abis/BlockAdAuction.json')
+		const blockadAbi = require('./abis/BlockAdAuction.json')
 		const provider = new JsonRpcProvider('https://rpc.rigil.suave.flashbots.net')
 		const blockadAddress = '0xee9794177378e98268b30Ca14964f2FDFc71bD6D'
 		const BlockAd = new Contract(blockadAddress, blockadAbi, provider)
@@ -44,7 +43,7 @@ describe('Confidential Provider/Wallet/Contract', async () => {
 		const pk = '1111111111111111111111111111111111111111111111111111111111111111'
 		const executionNode = '0x03493869959c866713c33669ca118e774a30a0e5'
 		const executionNodeUrl = 'https://rpc.rigil.suave.flashbots.net'
-		const blockadAbi = require('./tests/abis/BlockAdAuction.json')
+		const blockadAbi = require('./abis/BlockAdAuction.json')
 
 		const provider = new SuaveProvider(executionNodeUrl, executionNode)
 		const wallet = new SuaveWallet(pk, provider)
@@ -126,7 +125,3 @@ describe('Confidential Provider/Wallet/Contract', async () => {
 	})
 
 })
-
-function require(path: string) {
-	return JSON.parse(fs.readFileSync(path).toString())
-}
