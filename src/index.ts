@@ -1,17 +1,15 @@
-import { ConfidentialComputeRequest } from './confidential-types'
-import * as utils from '../src/utils'
+import { ConfidentialComputeRequest, ConfidentialComputeRecord } from './confidential-types'
 import { 
+    TransactionResponse,
     TransactionReceipt, 
     BaseContractMethod,
     JsonRpcProvider,
-    TransactionResponse,
     InterfaceAbi,
     Interface, 
     Contract, 
     Wallet, 
 } from 'ethers'
 
-type HexString = `0x${string}`
 
 class ConfidentialCallError extends Error {
     constructor(message: string) {
@@ -110,14 +108,14 @@ class ConfidentialTransactionResponse  {
 }
 
 export class SuaveProvider extends JsonRpcProvider {
-    executionNode: HexString | null
+    executionNode: string | null
 
-    constructor(url: string, executionNode: HexString = null) {
+    constructor(url: string, executionNode: string = null) {
         super(url)
         this.executionNode = executionNode
     }
 
-    async getConfidentialTransaction(hash: HexString): Promise<ConfidentialTransactionResponse> {
+    async getConfidentialTransaction(hash: string): Promise<ConfidentialTransactionResponse> {
         const raw = await super.send('eth_getTransactionByHash', [hash])
         return new ConfidentialTransactionResponse(raw, this)
     }
@@ -148,7 +146,7 @@ export class SuaveContract implements IDynamic {
     wallet: SuaveWallet
     inner: Contract
     
-    constructor(address: HexString, abi: Interface | InterfaceAbi, wallet: SuaveWallet) {
+    constructor(address: string, abi: Interface | InterfaceAbi, wallet: SuaveWallet) {
         this.inner = new Contract(address, abi, wallet)
         this.wallet = wallet
 
@@ -167,13 +165,12 @@ export class SuaveContract implements IDynamic {
                         if (wallet.sprovider.executionNode === null) {
                             throw new Error('No execution node set')
                         }
-                        const crc = utils.createConfidentialComputeRecord(filledTx, wallet.sprovider.executionNode)
+                        const crc = new ConfidentialComputeRecord(filledTx, wallet.sprovider.executionNode)
                         const crq = new ConfidentialComputeRequest(crc, overrides.confidentialInputs)
                         return crq
                     }
-
+                    
                     extendedMethod.prepareConfidentialRequest = prepareConfidentialRequest
-
                     extendedMethod.sendConfidentialRequest = async (...args: any[]) => {
                         const crq = (await prepareConfidentialRequest(...args))
                             .signWithWallet(target.wallet)
@@ -185,7 +182,7 @@ export class SuaveContract implements IDynamic {
                         return txRes
                     }
 
-                    return extendedMethod as ExtendedContractMethod;
+                    return extendedMethod;
                 }
                 return item as ExtendedContractMethod;
             },

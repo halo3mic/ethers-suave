@@ -5,16 +5,11 @@ import fs from 'fs'
 
 import { SuaveContract, SuaveProvider, SuaveWallet } from '../src/index'
 
-
 chai.use(chaiAsPromised)
 const { expect } = chai
 
-function require(path: string) {
-    return JSON.parse(fs.readFileSync(path).toString())
-}
 
-
-describe.only('Confidential Provider/Wallet/Contract', async () => {
+describe('Confidential Provider/Wallet/Contract', async () => {
 
     it('Non-confidential call', async () => {
 		const blockadAbi = require('./tests/abis/BlockAdAuction.json')
@@ -119,7 +114,7 @@ describe.only('Confidential Provider/Wallet/Contract', async () => {
         }
     })
 
-    it.only('confidential wait', async () => {
+    it('confidential wait', async () => {
         const provider = new SuaveProvider('https://rpc.rigil.suave.flashbots.net')
         const tx = await provider.getConfidentialTransaction('0xafac2b381a1a4875d3407373db0bf8d27f44ac7553ce57f01dd58ea9aad13122')
         const receipt = await tx.wait()
@@ -131,3 +126,7 @@ describe.only('Confidential Provider/Wallet/Contract', async () => {
     })
 
 })
+
+function require(path: string) {
+    return JSON.parse(fs.readFileSync(path).toString())
+}

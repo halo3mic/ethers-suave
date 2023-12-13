@@ -1,21 +1,14 @@
+import { ethers, Wallet, BigNumberish, TransactionRequest } from 'ethers'
 import { parseHexArg, keccak256, removeLeadingZeros } from './utils'
-import { ethers, Wallet, BigNumberish } from 'ethers'
 import {
     CONFIDENTIAL_COMPUTE_REQUEST_TYPE,
     CONFIDENTIAL_COMPUTE_RECORD_TYPE,
 } from './const'
 
 
-export type SigSplit = {
-    r: string,
-    s: string,
-    v: number,
-}
-
-// todo: option to add confidential inputs
 export class ConfidentialComputeRequest {
-	confidentialComputeRecord: ConfidentialComputeRecord
-	confidentialInputs: string
+	readonly confidentialComputeRecord: ConfidentialComputeRecord
+	readonly confidentialInputs: string
 
 	constructor(confidentialComputeRecord: ConfidentialComputeRecord, confidentialInputs: string = '0x') {
 		this.confidentialComputeRecord = confidentialComputeRecord
@@ -51,20 +44,20 @@ export class ConfidentialComputeRequest {
 	}
 
 	async signWithAsyncCallback(callback: (hash: string) => Promise<SigSplit>): Promise<ConfidentialComputeRequest> {
-		return callback(this._hash()).then(({ v, s, r }) => {
-			this.confidentialComputeRecord.r = removeLeadingZeros(r)
-			this.confidentialComputeRecord.s = removeLeadingZeros(s)
-			this.confidentialComputeRecord.v = Number(v) == 27 ? '0x' : '0x01'
+		return callback(this.#hash()).then((sig) => {
+			const { v, s, r } = parseSignature(sig)
+			this.confidentialComputeRecord.r = r
+			this.confidentialComputeRecord.s = s
+			this.confidentialComputeRecord.v = v
 			return this
 		})
 	}
 
     signWithCallback(callback: (hash: string) => SigSplit): ConfidentialComputeRequest {
-        const { v, s, r } = callback(this._hash())
-        this.confidentialComputeRecord.r = removeLeadingZeros(r)
-        this.confidentialComputeRecord.s = removeLeadingZeros(s)
-        this.confidentialComputeRecord.v = Number(v) == 27 ? '0x' : '0x01'
-
+        const { v, s, r } = parseSignature(callback(this.#hash()))
+		this.confidentialComputeRecord.r = r
+		this.confidentialComputeRecord.s = s
+		this.confidentialComputeRecord.v = v
 		return this
 	}
 
@@ -78,7 +71,7 @@ export class ConfidentialComputeRequest {
         return this.signWithWallet(new Wallet(pk))
     }
 
-	_hash(): string {
+	#hash(): string {
 		const confidentialInputsHash = keccak256(this.confidentialInputs)
 		this.confidentialComputeRecord.confidentialInputsHash = confidentialInputsHash
 		const ccr = this.confidentialComputeRecord
@@ -102,17 +95,85 @@ export class ConfidentialComputeRequest {
 
 }
 
-export interface ConfidentialComputeRecord {
-    nonce: string | number,
-    to: string,
-    gas: BigNumberish,
-    gasPrice: BigNumberish,
-    value: BigNumberish,
-    data: string,
-    executionNode: string,
-    chainId: string | number,
-    confidentialInputsHash?: null | string,
-    v?: null | BigNumberish,
-    r?: null | BigNumberish,
-    s?: null | BigNumberish,
+interface CCROverrides {
+	nonce?: number,
+	gasPrice?: BigNumberish,
+	gas?: BigNumberish,
+	to?: string,
+	value?: BigNumberish,
+	data?: string,
+	chainId?: BigNumberish,
+	confidentialInputsHash?: string,
+	executionNode?: string,
+	v?: BigNumberish,
+	r?: BigNumberish,
+	s?: BigNumberish,
+}
+
+export class ConfidentialComputeRecord {
+	readonly nonce: number
+	readonly to: string
+	readonly gas: BigNumberish
+	readonly gasPrice: BigNumberish
+	readonly value: BigNumberish
+	readonly data: string
+	readonly executionNode: string
+	readonly chainId: BigNumberish
+	confidentialInputsHash: null | string
+	v: null | BigNumberish
+	r: null | BigNumberish
+	s: null | BigNumberish
+
+	constructor(
+		transaction: any, 
+		executionNode: string,
+		overrides?: CCROverrides,
+	) {
+		this.nonce = transaction.nonce || overrides?.nonce
+		this.to = transaction.to?.toString() || overrides?.to || ethers.ZeroAddress
+		this.gas = transaction.gasLimit || overrides?.gas
+		this.gasPrice = transaction.gasPrice || overrides?.gasPrice
+		this.value = transaction.value || overrides?.value
+		this.data = transaction.data || overrides?.data
+		this.executionNode = executionNode || overrides?.executionNode
+		this.chainId = transaction.chainId || overrides?.chainId
+		this.#checkFields([
+			'executionNode',
+			'gasPrice',
+			'chainId',
+			'nonce',
+			'value',
+			'data',
+			'gas',
+		])
+		this.confidentialInputsHash = null
+		this.v = null
+		this.r = null
+		this.s = null
+	}
+
+	#checkFields(keys: Array<string>) {
+		for (const key of keys) {
+			this.#checkField(key)
+		}
+	}
+
+	#checkField(key: string) {
+		if (!this[key]) {
+			throw new Error(`Missing ${key}`)
+		}
+	}
+}
+
+export type SigSplit = {
+    r: string,
+    s: string,
+    v: number,
+}
+
+function parseSignature(sig: SigSplit): SigSplit {
+	sig.r = removeLeadingZeros(sig.r)
+	sig.s = removeLeadingZeros(sig.s)
+	sig.v = Number(sig.v) - 27
+	return sig
 }

@@ -1,5 +1,4 @@
-import { ConfidentialComputeRecord } from './confidential-types'
-import { ethers, BigNumberish, TransactionRequest } from 'ethers'
+import { ethers, BigNumberish } from 'ethers'
 
 
 export interface IBundle {
@@ -12,7 +11,7 @@ export function keccak256(x: string): string {
 }
 
 export function parseHexArg(arg: null | BigNumberish): string {
-	if (!arg) { // 0, null, undefined, ''
+	if (!arg) {
 		return '0x'
 	}
 	if (typeof arg === 'object' && 'toHexString' in (arg as any)) {
@@ -58,11 +57,11 @@ export function removeLeadingZeros(hex: string): string {
 	return '0x' + hex.slice(2).replace(/^00+/, '')
 }
 
-export function txToBundleBytes(signedTx): string {
+export function txToBundleBytes(signedTx: string): string {
 	return bundleToBytes(txToBundle(signedTx))
 }
 
-export function txToBundle(signedTx): IBundle {
+export function txToBundle(signedTx: string): IBundle {
 	return {
 		txs: [signedTx],
 		revertingHashes: [],
@@ -73,31 +72,4 @@ export function bundleToBytes(bundle: IBundle): string {
 	const bundleBytes = Buffer.from(JSON.stringify(bundle), 'utf8')
 	const confidentialDataBytes = ethers.AbiCoder.defaultAbiCoder().encode(['bytes'], [bundleBytes])
 	return confidentialDataBytes
-}
-
-// todo: this is too important to be in utils
-//todo: check all properties on the function are present!!!
-export function createConfidentialComputeRecord(
-	tx: TransactionRequest, // todo: TransactionLike<string>
-	executionNode: string, 
-): ConfidentialComputeRecord {
-	const nonce = tx.nonce
-	const gasPrice = tx.maxFeePerGas || tx.gasPrice
-	if (!gasPrice)
-		throw new Error('Invalid gas price')
-	const gas = tx.gasLimit
-	const to = tx.to.toString() || ethers.ZeroAddress
-	const value = tx.value || '0x'
-	const data = tx.data
-	const chainId = '0x' + tx.chainId.toString(16)
-	return {
-		executionNode,
-		nonce, 
-		gasPrice,
-		gas,
-		to,
-		value,
-		data,
-		chainId,
-	}
 }
