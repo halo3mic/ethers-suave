@@ -136,13 +136,8 @@ interface ExtendedContractMethod extends BaseContractMethod<any[], any, any> {
     sendConfidentialRequest?: (args: any) => Promise<ConfidentialTransactionResponse>;
 }
 
-
-interface IDynamic {
-    [key: string]: any;
-}
-
-export class SuaveContract implements IDynamic {
-	[k: string]: any;
+export class SuaveContract {
+	[k: string]: ExtendedContractMethod | SuaveWallet | Contract;
 	wallet: SuaveWallet
 	inner: Contract
 
@@ -177,7 +172,7 @@ export class SuaveContract implements IDynamic {
 							.rlpEncode()
 						const sprovider = target.wallet.sprovider
 						const txhash = await sprovider.send('eth_sendRawTransaction', [crq])
-							.catch(target.formatSubmissionError.bind(target))
+							.catch(target.#formatSubmissionError.bind(target))
 						const txRes = await sprovider.getConfidentialTransaction(txhash)
 						return txRes
 					}
@@ -193,7 +188,7 @@ export class SuaveContract implements IDynamic {
 
 	}
     
-	formatSubmissionError(error: any) {
+	#formatSubmissionError(error: any) {
 		const errMsg = error?.error?.message
 		if (!errMsg) {
 			throw new Error('Unknown error')
