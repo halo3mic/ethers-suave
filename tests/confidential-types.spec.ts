@@ -1,6 +1,6 @@
 import { expect } from 'chai'
 import { ethers } from 'ethers'
-import { ConfidentialComputeRequest, ConfidentialComputeRecord } from '../src'
+import { ConfidentialComputeRequest, ConfidentialComputeRecord } from 'ethers-suave'
 
 
 describe('ConfidentialComputeRequest', async () => {
