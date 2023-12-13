@@ -63,10 +63,10 @@ describe('parseHexArg', () => {
 
 describe('utils', () => {
 
-    it('hexFillZero', () => {
-        expect(hexFill32('0x3618e711cb980ccec6da1250624f4439df9c10e19da047cb6e4c7d0b7f3be'))
-            .to.eq('0x0003618e711cb980ccec6da1250624f4439df9c10e19da047cb6e4c7d0b7f3be')
+	it('hexFillZero', () => {
+		expect(hexFill32('0x3618e711cb980ccec6da1250624f4439df9c10e19da047cb6e4c7d0b7f3be'))
+			.to.eq('0x0003618e711cb980ccec6da1250624f4439df9c10e19da047cb6e4c7d0b7f3be')
 
-    })
+	})
 
 })

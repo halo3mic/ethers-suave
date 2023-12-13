@@ -1,8 +1,8 @@
-import { ethers, Wallet, BigNumberish, TransactionRequest } from 'ethers'
+import { ethers, Wallet, BigNumberish } from 'ethers'
 import { parseHexArg, keccak256, removeLeadingZeros } from './utils'
 import {
-    CONFIDENTIAL_COMPUTE_REQUEST_TYPE,
-    CONFIDENTIAL_COMPUTE_RECORD_TYPE,
+	CONFIDENTIAL_COMPUTE_REQUEST_TYPE,
+	CONFIDENTIAL_COMPUTE_RECORD_TYPE,
 } from './const'
 
 
@@ -53,23 +53,23 @@ export class ConfidentialComputeRequest {
 		})
 	}
 
-    signWithCallback(callback: (hash: string) => SigSplit): ConfidentialComputeRequest {
-        const { v, s, r } = parseSignature(callback(this.#hash()))
+	signWithCallback(callback: (hash: string) => SigSplit): ConfidentialComputeRequest {
+		const { v, s, r } = parseSignature(callback(this.#hash()))
 		this.confidentialComputeRecord.r = r
 		this.confidentialComputeRecord.s = s
 		this.confidentialComputeRecord.v = v
 		return this
 	}
 
-    signWithWallet(wallet: Wallet): ConfidentialComputeRequest {
-        return this.signWithCallback((h) => {
-            return wallet.signingKey.sign(h) as SigSplit
-        })
-    }
+	signWithWallet(wallet: Wallet): ConfidentialComputeRequest {
+		return this.signWithCallback((h) => {
+			return wallet.signingKey.sign(h) as SigSplit
+		})
+	}
 
-    signWithPK(pk: string): ConfidentialComputeRequest {
-        return this.signWithWallet(new Wallet(pk))
-    }
+	signWithPK(pk: string): ConfidentialComputeRequest {
+		return this.signWithWallet(new Wallet(pk))
+	}
 
 	#hash(): string {
 		const confidentialInputsHash = keccak256(this.confidentialInputs)
