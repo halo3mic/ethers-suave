@@ -9,7 +9,7 @@ import {
 	Contract, 
 	Wallet, 
 } from 'ethers'
-
+export { ConfidentialComputeRequest, ConfidentialComputeRecord } from './confidential-types'
 
 class ConfidentialCallError extends Error {
 	constructor(message: string) {
