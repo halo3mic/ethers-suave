@@ -26,7 +26,7 @@ describe('ConfidentialComputeRequest', async () => {
 
 		const filledRecord = confidentialRequest.confidentialComputeRecord
 		expect(filledRecord.confidentialInputsHash).to.eq('0x89ee438ca379ac86b0478517d43a6a9e078cf51543acac0facd68aff313e2ff1')
-		expect(filledRecord.v).to.eq('0x')
+		expect(filledRecord.v).to.eq(0)
 		expect(filledRecord.r).to.eq('0x1567c31c4bebcd1061edbaf22dd73fd40ff30f9a3ba4525037f23b2dc61e3473')
 		expect(filledRecord.s).to.eq('0x2dce69262794a499d525c5d58edde33e06a5847b4d321d396b743700a2fd71a8')
 	})

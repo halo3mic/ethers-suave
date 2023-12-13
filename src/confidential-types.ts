@@ -17,7 +17,7 @@ export class ConfidentialComputeRequest {
 
 	rlpEncode(): string {
 		const ccr = this.confidentialComputeRecord
-		if (!ccr.confidentialInputsHash || !ccr.r || !ccr.s || !ccr.v) {
+		if (!ccr.confidentialInputsHash || !ccr.r || !ccr.s || ccr.v === null) {
 			throw new Error('Missing fields')
 		}
 		const elements = [
@@ -63,7 +63,8 @@ export class ConfidentialComputeRequest {
 
 	signWithWallet(wallet: Wallet): ConfidentialComputeRequest {
 		return this.signWithCallback((h) => {
-			return wallet.signingKey.sign(h) as SigSplit
+			const sig = wallet.signingKey.sign(h)
+			return { v: sig.v, r: sig.r, s: sig.s }
 		})
 	}
 
@@ -131,10 +132,10 @@ export class ConfidentialComputeRecord {
 	) {
 		this.nonce = transaction.nonce || overrides?.nonce
 		this.to = transaction.to?.toString() || overrides?.to || ethers.ZeroAddress
-		this.gas = transaction.gasLimit || overrides?.gas
+		this.gas = transaction.gasLimit || transaction.gas || overrides?.gas
 		this.gasPrice = transaction.gasPrice || overrides?.gasPrice
-		this.value = transaction.value || overrides?.value
-		this.data = transaction.data || overrides?.data
+		this.value = transaction.value || overrides?.value || '0x'
+		this.data = transaction.data || transaction.input || overrides?.data
 		this.executionNode = executionNode || overrides?.executionNode
 		this.chainId = transaction.chainId || overrides?.chainId
 		this.#checkFields([
@@ -142,7 +143,6 @@ export class ConfidentialComputeRecord {
 			'gasPrice',
 			'chainId',
 			'nonce',
-			'value',
 			'data',
 			'gas',
 		])
@@ -174,6 +174,6 @@ export type SigSplit = {
 function parseSignature(sig: SigSplit): SigSplit {
 	sig.r = removeLeadingZeros(sig.r)
 	sig.s = removeLeadingZeros(sig.s)
-	sig.v = Number(sig.v) - 27
+	sig.v = Number(sig.v) == 27 ? 0 : 1
 	return sig
 }
