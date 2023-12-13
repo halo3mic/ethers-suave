@@ -1,9 +1,14 @@
 {
   "name": "ethers-suave",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "author": "Miha Lotric",
   "license": "MIT",
   "type": "module",
+  "description": "A typescript library, for interacting with Suave confidential requests.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/halo3mic/ethers-suave.git"
+  },
   "scripts": {
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
