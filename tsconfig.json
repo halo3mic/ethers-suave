@@ -1,7 +1,7 @@
 {
     "compilerOptions": {
-        "target": "es6",
-        "module": "esnext",
+        "target": "es2018",
+        "module": "commonjs",
         "esModuleInterop": true,
         "moduleResolution": "node",
         "declaration": true,
