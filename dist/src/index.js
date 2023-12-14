@@ -12,12 +12,9 @@ var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (
 };
 var _ConfidentialTransactionResponse_provider, _SuaveContract_instances, _SuaveContract_formatSubmissionError;
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.SuaveContract = exports.SuaveWallet = exports.SuaveProvider = exports.ConfidentialComputeRecord = exports.ConfidentialComputeRequest = void 0;
+exports.utils = exports.ConfidentialComputeRecord = exports.ConfidentialComputeRequest = exports.SuaveContract = exports.SuaveWallet = exports.SuaveProvider = void 0;
 const confidential_types_1 = require("./confidential-types");
 const ethers_1 = require("ethers");
-var confidential_types_2 = require("./confidential-types");
-Object.defineProperty(exports, "ConfidentialComputeRequest", { enumerable: true, get: function () { return confidential_types_2.ConfidentialComputeRequest; } });
-Object.defineProperty(exports, "ConfidentialComputeRecord", { enumerable: true, get: function () { return confidential_types_2.ConfidentialComputeRecord; } });
 class ConfidentialCallError extends Error {
     constructor(message) {
         super(message);
@@ -160,4 +157,9 @@ _SuaveContract_instances = new WeakSet(), _SuaveContract_formatSubmissionError =
     const fmsg = `${parsedErr.name}('${fargs}')\n`;
     throw new ConfidentialCallError(fmsg);
 };
+var confidential_types_2 = require("./confidential-types");
+Object.defineProperty(exports, "ConfidentialComputeRequest", { enumerable: true, get: function () { return confidential_types_2.ConfidentialComputeRequest; } });
+Object.defineProperty(exports, "ConfidentialComputeRecord", { enumerable: true, get: function () { return confidential_types_2.ConfidentialComputeRecord; } });
+const utils_1 = require("./utils");
+exports.utils = { txToBundleBytes: utils_1.txToBundleBytes, bundleToBytes: utils_1.bundleToBytes };
 //# sourceMappingURL=index.js.map

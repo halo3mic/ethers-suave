@@ -1,5 +1,4 @@
 import { TransactionReceipt, JsonRpcProvider, InterfaceAbi, Interface, Contract, Wallet } from 'ethers';
-export { ConfidentialComputeRequest, ConfidentialComputeRecord } from './confidential-types';
 declare class RequestRecord {
     readonly chainId: bigint;
     readonly confidentialInputsHash: string;
@@ -62,3 +61,9 @@ export declare class SuaveContract {
     inner: Contract;
     constructor(address: string, abi: Interface | InterfaceAbi, wallet: SuaveWallet);
 }
+export { ConfidentialComputeRequest, ConfidentialComputeRecord } from './confidential-types';
+import { txToBundleBytes, bundleToBytes } from './utils';
+export declare const utils: {
+    txToBundleBytes: typeof txToBundleBytes;
+    bundleToBytes: typeof bundleToBytes;
+};
