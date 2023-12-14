@@ -13,7 +13,8 @@
   "scripts": {
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "test": "mocha"
+    "test": "mocha", 
+    "build": "tsc"
   },
   "dependencies": {
     "ethers": "^6.9.0",
