@@ -6,12 +6,13 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const ethers_1 = require("ethers");
 const chai_as_promised_1 = __importDefault(require("chai-as-promised"));
 const chai_1 = __importDefault(require("chai"));
+const fs_1 = __importDefault(require("fs"));
 const src_1 = require("../src");
 chai_1.default.use(chai_as_promised_1.default);
 const { expect } = chai_1.default;
 describe('Confidential Provider/Wallet/Contract', async () => {
     it('Non-confidential call', async () => {
-        const blockadAbi = require('./abis/BlockAdAuction.json');
+        const blockadAbi = fetchJSON('./tests/abis/BlockAdAuction.json');
         const provider = new ethers_1.JsonRpcProvider('https://rpc.rigil.suave.flashbots.net');
         const blockadAddress = '0xee9794177378e98268b30Ca14964f2FDFc71bD6D';
         const BlockAd = new ethers_1.Contract(blockadAddress, blockadAbi, provider);
@@ -38,7 +39,7 @@ describe('Confidential Provider/Wallet/Contract', async () => {
         const pk = '1111111111111111111111111111111111111111111111111111111111111111';
         const executionNode = '0x03493869959c866713c33669ca118e774a30a0e5';
         const executionNodeUrl = 'https://rpc.rigil.suave.flashbots.net';
-        const blockadAbi = require('./abis/BlockAdAuction.json');
+        const blockadAbi = fetchJSON('./tests/abis/BlockAdAuction.json');
         const provider = new src_1.SuaveProvider(executionNodeUrl, executionNode);
         const wallet = new src_1.SuaveWallet(pk, provider);
         const blockadAddress = '0xf75e0C824Df257c02fe7493d6FF6d98F1ddab467';
@@ -115,4 +116,8 @@ describe('Confidential Provider/Wallet/Contract', async () => {
         expect(receipt).to.have.property('type').eq(80);
     });
 });
+function fetchJSON(path) {
+    const content = fs_1.default.readFileSync(path, 'utf8');
+    return JSON.parse(content);
+}
 //# sourceMappingURL=suave-provider.spec.js.map
