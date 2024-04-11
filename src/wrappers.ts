@@ -10,7 +10,8 @@ import {
 	InterfaceAbi,
 	Interface, 
 	Contract, 
-	Wallet, 
+	Wallet,
+	BaseContract,
 } from 'ethers'
 
 
@@ -62,12 +63,13 @@ interface ExtendedContractMethod extends BaseContractMethod<any[], any, any> {
     sendConfidentialRequest?: (args: any) => Promise<ConfidentialTransactionResponse>;
 }
 
-export class SuaveContract {
+export class SuaveContract extends BaseContract {
 	[k: string]: any;
 	wallet: SuaveWallet
 	inner: Contract
 
 	constructor(address: string, abi: Interface | InterfaceAbi, wallet: SuaveWallet) {
+		super(address, abi, wallet)
 		this.inner = new Contract(address, abi, wallet)
 		this.wallet = wallet
 
@@ -103,6 +105,15 @@ export class SuaveContract {
 
 					return extendedMethod
 				}
+
+				const actions = {
+					'connect': (wallet: SuaveWallet) => target.connect(wallet),
+					'attach': (address: string) => target.attach(address)
+				}
+				if (actions[prop as string]) {
+					return actions[prop as string]
+				}
+
 				return item as ExtendedContractMethod
 			},
 			has: (target, prop) => {
@@ -110,6 +121,14 @@ export class SuaveContract {
 			}
 		})
 
+	}
+
+	connect(wallet: SuaveWallet): SuaveContract {
+		return new SuaveContract(this.inner.target as string, this.inner.interface, wallet)
+	}
+
+	attach(address: string): SuaveContract {
+		return new SuaveContract(address, this.inner.interface, this.wallet)
 	}
     
 	#formatSubmissionError(error: any) {

@@ -1,4 +1,3 @@
-import { Contract, JsonRpcProvider } from 'ethers'
 import chaiAsPromised from 'chai-as-promised'
 import chai from 'chai'
 import fs from 'fs'
@@ -11,14 +10,24 @@ const { expect } = chai
 
 describe('Confidential Provider/Wallet/Contract', async () => {
 
-	it('Non-confidential call', async () => {
+	it('use connect', async () => {
+		const pk1 = '1111111111111111111111111111111111111111111111111111111111111111'
+		const pk2 = '1111111111111111111111111111111111111111111111111111111111111112'
+		const kettleUrl = 'https://rpc.rigil.suave.flashbots.net'
 		const blockadAbi = fetchJSON('./tests/abis/BlockAdAuction.json')
-		const provider = new JsonRpcProvider('https://rpc.rigil.suave.flashbots.net')
-		const blockadAddress = '0xee9794177378e98268b30Ca14964f2FDFc71bD6D'
-		const BlockAd = new Contract(blockadAddress, blockadAbi, provider)
-		const isInitialized = await BlockAd.isInitialized()
-		expect(isInitialized).to.be.true
-	})
+
+		const provider = new SuaveProvider(kettleUrl)
+		const wallet1 = new SuaveWallet(pk1, provider)
+		const wallet2 = new SuaveWallet(pk2, provider)
+
+		const blockadAddress = '0xf75e0C824Df257c02fe7493d6FF6d98F1ddab467'
+		
+		let BlockAd = new SuaveContract(blockadAddress, blockadAbi, wallet1)
+		const BlockAd2 = BlockAd.connect(wallet2)
+
+		const resp = await BlockAd2.builder.sendConfidentialRequest()
+		expect(resp).to.have.property('from').to.eq(wallet2.address)
+	}).timeout(100000)
 
 	it('Confidential send response', async () => {
 	    const pk = '1111111111111111111111111111111111111111111111111111111111111111'
