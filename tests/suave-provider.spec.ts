@@ -127,6 +127,75 @@ describe('Confidential Provider/Wallet/Contract', async () => {
 
 })
 
+describe.only('err handling', async () => {
+
+	it('insufficient funds', async () => {
+		const executionNode = '0x03493869959c866713c33669ca118e774a30a0e5'
+		const executionNodeUrl = 'https://rpc.rigil.suave.flashbots.net'
+		const blockadAbi = fetchJSON('./tests/abis/BlockAdAuction.json')
+
+		const provider = new SuaveProvider(executionNodeUrl, executionNode)
+		let emptyWallet: SuaveWallet
+		for (let i = 0; i < 10; i++) {
+			emptyWallet = SuaveWallet.random(provider)
+			let bal = await provider.getBalance(emptyWallet.address)
+			if (bal == BigInt(0)) {
+				break
+			}
+			if (i == 9) {
+				throw new Error('could not find empty wallet')
+			}
+		}
+		const wallet = SuaveWallet.random(provider)
+		expect(await provider.getBalance(wallet.address)).to.eq(BigInt(0))
+		const blockadAddress = '0xf75e0C824Df257c02fe7493d6FF6d98F1ddab467'
+        
+		const BlockAd = new SuaveContract(blockadAddress, blockadAbi, wallet)
+		const blockLimit = 100
+		const extra = '🚀🚀'
+		const confidentialInputs = '0x000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000f37b22747873223a5b22307866383636383162613836303861393666343839383661383235323038393431366632616138646630353562366536373262393364656434316665636363616261623536356230383038303264613035333266616561616165373262383636623535356635313936613936616238356432366335643233363261326439333036336635616135333838633937336433613031396231643836336664323933396231643062353962363133393665613635333164353438306134333231633833373534313537633434623532343165616265225d2c22726576657274696e67486173686573223a5b5d7d00000000000000000000000000'
+		const crqPromise = BlockAd.buyAd.sendConfidentialRequest(blockLimit, extra, {confidentialInputs})
+		await expect(crqPromise).to.eventually.be.rejectedWith(/insufficient funds.*/)
+	}).timeout(100000)
+
+	it('wrong kettle address', async () => {
+		const pk = '1111111111111111111111111111111111111111111111111111111111111122'
+		const executionNode = '0x13493869959c866713c33669ca118e774a30a0e5'
+		const executionNodeUrl = 'https://rpc.rigil.suave.flashbots.net'
+		const blockadAbi = fetchJSON('./tests/abis/BlockAdAuction.json')
+
+		const provider = new SuaveProvider(executionNodeUrl, executionNode)
+		const wallet = new SuaveWallet(pk, provider)
+		const blockadAddress = '0xf75e0C824Df257c02fe7493d6FF6d98F1ddab467'
+        
+		const BlockAd = new SuaveContract(blockadAddress, blockadAbi, wallet)
+		const blockLimit = 100
+		const extra = '🚀🚀'
+		const confidentialInputs = '0x000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000f37b22747873223a5b22307866383636383162613836303861393666343839383661383235323038393431366632616138646630353562366536373262393364656434316665636363616261623536356230383038303264613035333266616561616165373262383636623535356635313936613936616238356432366335643233363261326439333036336635616135333838633937336433613031396231643836336664323933396231643062353962363133393665613635333164353438306134333231633833373534313537633434623532343165616265225d2c22726576657274696e67486173686573223a5b5d7d00000000000000000000000000'
+		const crqPromise = BlockAd.buyAd.sendConfidentialRequest(blockLimit, extra, {confidentialInputs})
+		await expect(crqPromise).to.eventually.be.rejectedWith(/unknown account/)
+	}) .timeout(100000)
+
+	it('wrong chain', async () => {
+		const pk = '1111111111111111111111111111111111111111111111111111111111111122'
+		const executionNode = '0x13493869959c866713c33669ca118e774a30a0e5'
+		const executionNodeUrl = 'https://holesky.drpc.org'
+		const blockadAbi = fetchJSON('./tests/abis/BlockAdAuction.json')
+
+		const provider = new SuaveProvider(executionNodeUrl, executionNode)
+		const wallet = new SuaveWallet(pk, provider)
+		const blockadAddress = '0xf75e0C824Df257c02fe7493d6FF6d98F1ddab467'
+        
+		const BlockAd = new SuaveContract(blockadAddress, blockadAbi, wallet)
+		const blockLimit = 100
+		const extra = '🚀🚀'
+		const confidentialInputs = '0x000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000f37b22747873223a5b22307866383636383162613836303861393666343839383661383235323038393431366632616138646630353562366536373262393364656434316665636363616261623536356230383038303264613035333266616561616165373262383636623535356635313936613936616238356432366335643233363261326439333036336635616135333838633937336433613031396231643836336664323933396231643062353962363133393665613635333164353438306134333231633833373534313537633434623532343165616265225d2c22726576657274696e67486173686573223a5b5d7d00000000000000000000000000'
+		const crqPromise = BlockAd.buyAd.sendConfidentialRequest(blockLimit, extra, {confidentialInputs})
+		await expect(crqPromise).to.eventually.be.rejectedWith(/transaction type not supported/)
+	})
+
+})
+
 function fetchJSON(path: string) {
 	const content = fs.readFileSync(path, 'utf8')
 	return JSON.parse(content)

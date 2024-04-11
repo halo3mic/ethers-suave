@@ -35,6 +35,10 @@ export class SuaveWallet extends Wallet {
 		super(privateKey, provider)
 		this.sprovider = provider
 	}
+	
+	static random(provider?: SuaveProvider): SuaveWallet {
+		return new SuaveWallet(Wallet.createRandom().privateKey, provider)
+	}
 
 }
 
@@ -102,15 +106,16 @@ export class SuaveContract {
 			throw new ConfidentialRequestError(err)
 		}
 		const re = /^execution reverted: (?<msg>0x([0-f][0-f])*)/
-		const errSlice = errMsg.match(re).groups?.msg
-		if (!errSlice) {
-			throw new Error(errMsg)
+		const matched = errMsg.match(re)
+		if (!matched || !matched.groups?.msg) {
+			throw new ConfidentialRequestError(errMsg)
 		}
+		const errSlice = matched.groups.msg
 		let parsedErr
 		try {
 			parsedErr = this.inner.interface.parseError(errSlice)
 		} catch {
-			throw new Error(errMsg)
+			throw new ConfidentialExecutionError(errMsg)
 		}
 		const fargs = parsedErr.args.join('\', \'')
 		const fmsg = `${parsedErr.name}('${fargs}')\n`
