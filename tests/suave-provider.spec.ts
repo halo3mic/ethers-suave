@@ -125,9 +125,24 @@ describe('Confidential Provider/Wallet/Contract', async () => {
 		expect(receipt).to.have.property('type').eq(80)
 	})
 
+	it('Allow empty overrides', async () => {
+		const pk = '1111111111111111111111111111111111111111111111111111111111111111'
+		const executionNode = '0x03493869959c866713c33669ca118e774a30a0e5'
+		const executionNodeUrl = 'https://rpc.rigil.suave.flashbots.net'
+		const blockadAbi = fetchJSON('./tests/abis/BlockAdAuction.json')
+
+		const provider = new SuaveProvider(executionNodeUrl, executionNode)
+		const wallet = new SuaveWallet(pk, provider)
+		const blockadAddress = '0xf75e0C824Df257c02fe7493d6FF6d98F1ddab467'
+        
+		const BlockAd = new SuaveContract(blockadAddress, blockadAbi, wallet)
+		const crqPromise = BlockAd.builder.sendConfidentialRequest()
+		await expect(crqPromise).to.eventually.be.fulfilled
+	}).timeout(100000)
+
 })
 
-describe.only('err handling', async () => {
+describe('err handling', async () => {
 
 	it('insufficient funds', async () => {
 		const executionNode = '0x03493869959c866713c33669ca118e774a30a0e5'

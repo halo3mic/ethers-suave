@@ -63,7 +63,7 @@ export class SuaveContract {
 					const extendedMethod: ExtendedContractMethod = item
 
 					const prepareConfidentialRequest = async (...args: any[]): Promise<ConfidentialComputeRequest> => {
-						const overrides = args[args.length - 1]
+						const overrides = args[args.length - 1] || {}
 						const contractTx = await extendedMethod.populateTransaction(...args)
 						contractTx.type = 0
 						contractTx.gasLimit = BigInt(overrides.gasLimit || 1e7)
