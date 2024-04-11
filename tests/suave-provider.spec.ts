@@ -20,42 +20,22 @@ describe('Confidential Provider/Wallet/Contract', async () => {
 		expect(isInitialized).to.be.true
 	})
 
-	// it('Confidential send response', async () => {
-	//     const pk = '1111111111111111111111111111111111111111111111111111111111111111'
-	//     const executionNode = '0x03493869959c866713c33669ca118e774a30a0e5'
-	//     const executionNodeUrl = 'https://rpc.rigil.suave.flashbots.net'
-	//     const blockadAbi = require('./tests/abis/BlockAdAuction.json')
+	it('Confidential send response', async () => {
+	    const pk = '1111111111111111111111111111111111111111111111111111111111111111'
+	    const kettleUrl = 'https://rpc.rigil.suave.flashbots.net'
+	    const blockadAbi = fetchJSON('./tests/abis/BlockAdAuction.json')
 
-	//     const provider = new SuaveProvider(executionNodeUrl, executionNode)
-	//     const wallet = new SuaveWallet(pk, provider)
-	//     const blockadAddress = '0xee9794177378e98268b30Ca14964f2FDFc71bD6D'
+	    const provider = new SuaveProvider(kettleUrl)
+	    const wallet = new SuaveWallet(pk, provider)
+	    const blockadAddress = '0xee9794177378e98268b30Ca14964f2FDFc71bD6D'
         
-	//     const BlockAd = new SuaveContract(blockadAddress, blockadAbi, wallet)
-	//     const blockLimit = 100
-	//     const extra = '🚀'
-	//     const confidentialInputs = '0x000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000f37b22747873223a5b22307866383636383162633836303861393666343839383732383235323038393431366632616138646630353562366536373262393364656434316665636363616261623536356230383038303264613033383730666466623934313835346236363663343265663266633333356231336161366637666430393436646337393039326466323235323365316637643435613036333465353435383236303535356138636466353261363234363035343061356664386439373461303332333866633235646663643431653833303061643764225d2c22726576657274696e67486173686573223a5b5d7d00000000000000000000000000'
-	//     const crq = await BlockAd.buyAd.sendConfidentialRequest(blockLimit, extra, {confidentialInputs})
+	    const BlockAd = new SuaveContract(blockadAddress, blockadAbi, wallet)
+	    const crq = await BlockAd.builder.sendConfidentialRequest()
 
-	//     expect(crq).to.have.property('requestRecord')
-	//     expect(crq).to.have.property('confidentialComputeResult')
-	// }).timeout(100000)
-
-	it('Confidential err response', async () => {
-		const pk = '1111111111111111111111111111111111111111111111111111111111111111'
-		const executionNode = '0x03493869959c866713c33669ca118e774a30a0e5'
-		const executionNodeUrl = 'https://rpc.rigil.suave.flashbots.net'
-		const blockadAbi = fetchJSON('./tests/abis/BlockAdAuction.json')
-
-		const provider = new SuaveProvider(executionNodeUrl, executionNode)
-		const wallet = new SuaveWallet(pk, provider)
-		const blockadAddress = '0xf75e0C824Df257c02fe7493d6FF6d98F1ddab467'
-        
-		const BlockAd = new SuaveContract(blockadAddress, blockadAbi, wallet)
-		const blockLimit = 100
-		const extra = '🚀🚀'
-		const confidentialInputs = '0x000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000f37b22747873223a5b22307866383636383162613836303861393666343839383661383235323038393431366632616138646630353562366536373262393364656434316665636363616261623536356230383038303264613035333266616561616165373262383636623535356635313936613936616238356432366335643233363261326439333036336635616135333838633937336433613031396231643836336664323933396231643062353962363133393665613635333164353438306134333231633833373534313537633434623532343165616265225d2c22726576657274696e67486173686573223a5b5d7d00000000000000000000000000'
-		const crqPromise = BlockAd.buyAd.sendConfidentialRequest(blockLimit, extra, {confidentialInputs})
-		await expect(crqPromise).to.eventually.be.rejectedWith(/SuaveError\('nonce too low:.*/)
+	    expect(crq).to.have.property('requestRecord')
+	    expect(crq).to.have
+			.property('confidentialComputeResult')
+			.eq('0x000000000000000000000000d4610c597b921269e96b0c2b914e3d46ebea5a36')
 	}).timeout(100000)
 
 	it('confidential tx response', async () => {
@@ -127,11 +107,10 @@ describe('Confidential Provider/Wallet/Contract', async () => {
 
 	it('Allow empty overrides', async () => {
 		const pk = '1111111111111111111111111111111111111111111111111111111111111111'
-		const executionNode = '0x03493869959c866713c33669ca118e774a30a0e5'
-		const executionNodeUrl = 'https://rpc.rigil.suave.flashbots.net'
+		const kettleUrl = 'https://rpc.rigil.suave.flashbots.net'
 		const blockadAbi = fetchJSON('./tests/abis/BlockAdAuction.json')
 
-		const provider = new SuaveProvider(executionNodeUrl, executionNode)
+		const provider = new SuaveProvider(kettleUrl)
 		const wallet = new SuaveWallet(pk, provider)
 		const blockadAddress = '0xf75e0C824Df257c02fe7493d6FF6d98F1ddab467'
         
@@ -140,16 +119,21 @@ describe('Confidential Provider/Wallet/Contract', async () => {
 		await expect(crqPromise).to.eventually.be.fulfilled
 	}).timeout(100000)
 
+	it('get kettle address', async () => {
+		const provider = new SuaveProvider('https://rpc.rigil.suave.flashbots.net')
+		const kettle = await provider.getKettleAddress()
+		expect(kettle).to.eq('0x03493869959c866713c33669ca118e774a30a0e5')
+	})
+
 })
 
 describe('err handling', async () => {
 
 	it('insufficient funds', async () => {
-		const executionNode = '0x03493869959c866713c33669ca118e774a30a0e5'
-		const executionNodeUrl = 'https://rpc.rigil.suave.flashbots.net'
+		const kettleUrl = 'https://rpc.rigil.suave.flashbots.net'
 		const blockadAbi = fetchJSON('./tests/abis/BlockAdAuction.json')
 
-		const provider = new SuaveProvider(executionNodeUrl, executionNode)
+		const provider = new SuaveProvider(kettleUrl)
 		let emptyWallet: SuaveWallet
 		for (let i = 0; i < 10; i++) {
 			emptyWallet = SuaveWallet.random(provider)
@@ -175,11 +159,11 @@ describe('err handling', async () => {
 
 	it('wrong kettle address', async () => {
 		const pk = '1111111111111111111111111111111111111111111111111111111111111122'
-		const executionNode = '0x13493869959c866713c33669ca118e774a30a0e5'
-		const executionNodeUrl = 'https://rpc.rigil.suave.flashbots.net'
+		const kettleUrl = 'https://rpc.rigil.suave.flashbots.net'
 		const blockadAbi = fetchJSON('./tests/abis/BlockAdAuction.json')
 
-		const provider = new SuaveProvider(executionNodeUrl, executionNode)
+		const provider = new SuaveProvider(kettleUrl)
+		provider.setKettleAddress('0xdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef')
 		const wallet = new SuaveWallet(pk, provider)
 		const blockadAddress = '0xf75e0C824Df257c02fe7493d6FF6d98F1ddab467'
         
@@ -189,15 +173,15 @@ describe('err handling', async () => {
 		const confidentialInputs = '0x000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000f37b22747873223a5b22307866383636383162613836303861393666343839383661383235323038393431366632616138646630353562366536373262393364656434316665636363616261623536356230383038303264613035333266616561616165373262383636623535356635313936613936616238356432366335643233363261326439333036336635616135333838633937336433613031396231643836336664323933396231643062353962363133393665613635333164353438306134333231633833373534313537633434623532343165616265225d2c22726576657274696e67486173686573223a5b5d7d00000000000000000000000000'
 		const crqPromise = BlockAd.buyAd.sendConfidentialRequest(blockLimit, extra, {confidentialInputs})
 		await expect(crqPromise).to.eventually.be.rejectedWith(/unknown account/)
-	}) .timeout(100000)
+	}).timeout(100000)
 
 	it('wrong chain', async () => {
 		const pk = '1111111111111111111111111111111111111111111111111111111111111122'
-		const executionNode = '0x13493869959c866713c33669ca118e774a30a0e5'
-		const executionNodeUrl = 'https://holesky.drpc.org'
+		const kettleUrl = 'https://ethereum-holesky-rpc.publicnode.com'
 		const blockadAbi = fetchJSON('./tests/abis/BlockAdAuction.json')
 
-		const provider = new SuaveProvider(executionNodeUrl, executionNode)
+		const provider = new SuaveProvider(kettleUrl)
+		provider.setKettleAddress('0xdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef')
 		const wallet = new SuaveWallet(pk, provider)
 		const blockadAddress = '0xf75e0C824Df257c02fe7493d6FF6d98F1ddab467'
         

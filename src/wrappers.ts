@@ -15,16 +15,31 @@ import {
 
 
 export class SuaveProvider extends JsonRpcProvider {
-	executionNode: string | null
+	#kettleAddress: string | undefined
 
-	constructor(url: string, executionNode: string = null) {
+	constructor(url: string) {
 		super(url)
-		this.executionNode = executionNode
 	}
 
 	async getConfidentialTransaction(hash: string): Promise<ConfidentialTransactionResponse> {
 		const raw = await super.send('eth_getTransactionByHash', [hash])
 		return new ConfidentialTransactionResponse(raw, this)
+	}
+
+	async getKettleAddress(): Promise<string> {
+		if (!this.#kettleAddress) {
+			const kettleAddress = await this.#getKettleAddress()
+			this.setKettleAddress(kettleAddress)
+		}
+		return this.#kettleAddress
+	}
+
+	setKettleAddress(address: string) {
+		this.#kettleAddress = address
+	}
+
+	async #getKettleAddress(): Promise<string> {
+		return this.send('eth_kettleAddress', []).then(r => r[0])
 	}
 
 }
@@ -68,10 +83,8 @@ export class SuaveContract {
 						contractTx.type = 0
 						contractTx.gasLimit = BigInt(overrides.gasLimit || 1e7)
 						const filledTx = await target.wallet.populateTransaction(contractTx)
-						if (wallet.sprovider.executionNode === null) {
-							throw new Error('No execution node set')
-						}
-						const crc = new ConfidentialComputeRecord(filledTx, wallet.sprovider.executionNode)
+						const kettleAddress = await wallet.sprovider.getKettleAddress()
+						const crc = new ConfidentialComputeRecord(filledTx, kettleAddress)
 						const crq = new ConfidentialComputeRequest(crc, overrides.confidentialInputs)
 						return crq
 					}

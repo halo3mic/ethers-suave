@@ -6,7 +6,7 @@ A typescript library, built on top of ethers.js, for interacting with Suave conf
 
 #### Send confidential request
 ```typescript
-const provider = new SuaveProvider(executionNodeUrl, executionNodeAddress)
+const provider = new SuaveProvider(kettleUrl)
 const wallet = new SuaveWallet(pk, provider)
 
 const StoreContract = new SuaveContract(confidentialContractAdd, blockadAbi, wallet)
