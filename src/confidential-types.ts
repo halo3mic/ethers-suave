@@ -130,14 +130,14 @@ export class ConfidentialComputeRecord {
 		executionNode: string,
 		overrides?: CCROverrides,
 	) {
-		this.nonce = transaction.nonce || overrides?.nonce
+		this.nonce = transaction.nonce || overrides?.nonce || 0
 		this.to = transaction.to?.toString() || overrides?.to || ethers.ZeroAddress
 		this.gas = transaction.gasLimit || transaction.gas || overrides?.gas
-		this.gasPrice = transaction.gasPrice || overrides?.gasPrice
+		this.gasPrice = transaction.gasPrice || overrides?.gasPrice || '0x'
 		this.value = transaction.value || overrides?.value || '0x'
 		this.data = transaction.data || transaction.input || overrides?.data
 		this.executionNode = executionNode || overrides?.executionNode
-		this.chainId = transaction.chainId || overrides?.chainId
+		this.chainId = transaction.chainId || overrides?.chainId || 1
 		this.#checkFields([
 			'executionNode',
 			'gasPrice',
@@ -159,7 +159,7 @@ export class ConfidentialComputeRecord {
 	}
 
 	#checkField(key: string) {
-		if (!this[key]) {
+		if (this[key] === null || this[key] === undefined) {
 			throw new Error(`Missing ${key}`)
 		}
 	}
