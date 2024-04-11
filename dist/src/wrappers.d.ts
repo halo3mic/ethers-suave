@@ -1,19 +1,25 @@
-import { TransactionReceipt, JsonRpcProvider, InterfaceAbi, Interface, Contract, Wallet } from 'ethers';
+import { TransactionReceipt, JsonRpcProvider, InterfaceAbi, Interface, Contract, Wallet, BaseContract, ContractRunner } from 'ethers';
 export declare class SuaveProvider extends JsonRpcProvider {
-    executionNode: string | null;
-    constructor(url: string, executionNode?: string);
+    #private;
+    constructor(url: string);
     getConfidentialTransaction(hash: string): Promise<ConfidentialTransactionResponse>;
+    getKettleAddress(): Promise<string>;
+    setKettleAddress(address: string): void;
 }
 export declare class SuaveWallet extends Wallet {
     sprovider: SuaveProvider;
     constructor(privateKey: string, provider?: SuaveProvider);
+    static random(provider?: SuaveProvider): SuaveWallet;
+    static fromWallet(wallet: Wallet, provider?: SuaveProvider): SuaveWallet;
 }
-export declare class SuaveContract {
+export declare class SuaveContract extends BaseContract {
     #private;
     [k: string]: any;
-    wallet: SuaveWallet;
+    runner: ContractRunner;
     inner: Contract;
-    constructor(address: string, abi: Interface | InterfaceAbi, wallet: SuaveWallet);
+    constructor(address: string, abi: Interface | InterfaceAbi, runner: ContractRunner);
+    connect(wallet: SuaveWallet): SuaveContract;
+    attach(address: string): SuaveContract;
 }
 export declare class ConfidentialTransactionResponse {
     #private;

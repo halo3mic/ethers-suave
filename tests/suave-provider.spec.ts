@@ -22,7 +22,7 @@ describe('Confidential Provider/Wallet/Contract', async () => {
 
 		const blockadAddress = '0xf75e0C824Df257c02fe7493d6FF6d98F1ddab467'
 		
-		let BlockAd = new SuaveContract(blockadAddress, blockadAbi, wallet1)
+		const BlockAd = new SuaveContract(blockadAddress, blockadAbi, wallet1)
 		const BlockAd2 = BlockAd.connect(wallet2)
 
 		const resp = await BlockAd2.builder.sendConfidentialRequest()
@@ -39,19 +39,19 @@ describe('Confidential Provider/Wallet/Contract', async () => {
 	})
 
 	it('Confidential send response', async () => {
-	    const pk = '1111111111111111111111111111111111111111111111111111111111111111'
-	    const kettleUrl = 'https://rpc.rigil.suave.flashbots.net'
-	    const blockadAbi = fetchJSON('./tests/abis/BlockAdAuction.json')
+		const pk = '1111111111111111111111111111111111111111111111111111111111111111'
+		const kettleUrl = 'https://rpc.rigil.suave.flashbots.net'
+		const blockadAbi = fetchJSON('./tests/abis/BlockAdAuction.json')
 
-	    const provider = new SuaveProvider(kettleUrl)
-	    const wallet = new SuaveWallet(pk, provider)
-	    const blockadAddress = '0xee9794177378e98268b30Ca14964f2FDFc71bD6D'
-        
-	    const BlockAd = new SuaveContract(blockadAddress, blockadAbi, wallet)
-	    const crq = await BlockAd.builder.sendConfidentialRequest()
+		const provider = new SuaveProvider(kettleUrl)
+		const wallet = new SuaveWallet(pk, provider)
+		const blockadAddress = '0xee9794177378e98268b30Ca14964f2FDFc71bD6D'
 
-	    expect(crq).to.have.property('requestRecord')
-	    expect(crq).to.have
+		const BlockAd = new SuaveContract(blockadAddress, blockadAbi, wallet)
+		const crq = await BlockAd.builder.sendConfidentialRequest()
+
+		expect(crq).to.have.property('requestRecord')
+		expect(crq).to.have
 			.property('confidentialComputeResult')
 			.eq('0x000000000000000000000000d4610c597b921269e96b0c2b914e3d46ebea5a36')
 	}).timeout(100000)
@@ -155,7 +155,7 @@ describe('err handling', async () => {
 		let emptyWallet: SuaveWallet
 		for (let i = 0; i < 10; i++) {
 			emptyWallet = SuaveWallet.random(provider)
-			let bal = await provider.getBalance(emptyWallet.address)
+			const bal = await provider.getBalance(emptyWallet.address)
 			if (bal == BigInt(0)) {
 				break
 			}
