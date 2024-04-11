@@ -12,6 +12,7 @@ import {
 	Contract, 
 	Wallet,
 	BaseContract,
+	ContractRunner,
 } from 'ethers'
 
 
@@ -65,13 +66,13 @@ interface ExtendedContractMethod extends BaseContractMethod<any[], any, any> {
 
 export class SuaveContract extends BaseContract {
 	[k: string]: any;
-	wallet: SuaveWallet
+	runner: ContractRunner
 	inner: Contract
 
-	constructor(address: string, abi: Interface | InterfaceAbi, wallet: SuaveWallet) {
-		super(address, abi, wallet)
-		this.inner = new Contract(address, abi, wallet)
-		this.wallet = wallet
+	constructor(address: string, abi: Interface | InterfaceAbi, runner: ContractRunner) {
+		super(address, abi, runner)
+		this.inner = new Contract(address, abi, runner)
+		this.wallet = runner
 
 		return new Proxy(this, {
 			get: (target, prop, receiver): ExtendedContractMethod | any => {
@@ -85,7 +86,7 @@ export class SuaveContract extends BaseContract {
 						contractTx.type = 0
 						contractTx.gasLimit = BigInt(overrides.gasLimit || 1e7)
 						const filledTx = await target.wallet.populateTransaction(contractTx)
-						const kettleAddress = await wallet.sprovider.getKettleAddress()
+						const kettleAddress = await (runner.provider as SuaveProvider).getKettleAddress()
 						const crc = new ConfidentialComputeRecord(filledTx, kettleAddress)
 						const crq = new ConfidentialComputeRequest(crc, overrides.confidentialInputs)
 						return crq

@@ -29,6 +29,15 @@ describe('Confidential Provider/Wallet/Contract', async () => {
 		expect(resp).to.have.property('from').to.eq(wallet2.address)
 	}).timeout(100000)
 
+	it('Non-confidential call / Contract with provider', async () => {
+		const blockadAbi = fetchJSON('./tests/abis/BlockAdAuction.json')
+		const provider = new SuaveProvider('https://rpc.rigil.suave.flashbots.net')
+		const blockadAddress = '0xee9794177378e98268b30Ca14964f2FDFc71bD6D'
+		const BlockAd = new SuaveContract(blockadAddress, blockadAbi, provider)
+		const isInitialized = await BlockAd.isInitialized()
+		expect(isInitialized).to.be.true
+	})
+
 	it('Confidential send response', async () => {
 	    const pk = '1111111111111111111111111111111111111111111111111111111111111111'
 	    const kettleUrl = 'https://rpc.rigil.suave.flashbots.net'
