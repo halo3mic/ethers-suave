@@ -98,7 +98,8 @@ export class SuaveContract {
 	#formatSubmissionError(error: any) {
 		const errMsg = error?.error?.message
 		if (!errMsg) {
-			throw new Error('Unknown error')
+			const err = error || 'Unknown error'
+			throw new ConfidentialRequestError(err)
 		}
 		const re = /^execution reverted: (?<msg>0x([0-f][0-f])*)/
 		const errSlice = errMsg.match(re).groups?.msg
@@ -114,15 +115,23 @@ export class SuaveContract {
 		const fargs = parsedErr.args.join('\', \'')
 		const fmsg = `${parsedErr.name}('${fargs}')\n`
 
-		throw new ConfidentialCallError(fmsg)
+		throw new ConfidentialExecutionError(fmsg)
 	}
 }
 
-class ConfidentialCallError extends Error {
+class ConfidentialExecutionError extends Error {
 	constructor(message: string) {
 		super(message)
 		this.name = 'ConfidentialCallError'
-		this.stack = this.stack.replace(/^Error\n/, `${this.name}: `)
+		this.stack = this.stack.replace(/^.*Error: /, `${this.name}: `)
+	}
+}
+
+class ConfidentialRequestError extends Error {
+	constructor(message: string) {
+		super(message)
+		this.name = 'ConfidentialRequestError'
+		this.stack = this.stack.replace(/^.*Error: /, `${this.name}: `)
 	}
 }
 
