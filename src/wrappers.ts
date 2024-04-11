@@ -57,6 +57,10 @@ export class SuaveWallet extends Wallet {
 		return new SuaveWallet(Wallet.createRandom().privateKey, provider)
 	}
 
+	static fromWallet(wallet: Wallet, provider?: SuaveProvider): SuaveWallet {
+		return new SuaveWallet(wallet.privateKey, provider)
+	}
+
 }
 
 interface ExtendedContractMethod extends BaseContractMethod<any[], any, any> {
