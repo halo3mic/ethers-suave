@@ -29,7 +29,7 @@ class ConfidentialComputeRequest {
                 ccr.to,
                 ccr.value,
                 ccr.data,
-                ccr.executionNode,
+                ccr.kettleAddress,
                 ccr.confidentialInputsHash,
                 ccr.chainId,
                 ccr.v,
@@ -74,7 +74,7 @@ _ConfidentialComputeRequest_instances = new WeakSet(), _ConfidentialComputeReque
     this.confidentialComputeRecord.confidentialInputsHash = confidentialInputsHash;
     const ccr = this.confidentialComputeRecord;
     const elements = [
-        ccr.executionNode,
+        ccr.kettleAddress,
         confidentialInputsHash,
         ccr.nonce,
         ccr.gasPrice,
@@ -89,19 +89,19 @@ _ConfidentialComputeRequest_instances = new WeakSet(), _ConfidentialComputeReque
     return hash;
 };
 class ConfidentialComputeRecord {
-    constructor(transaction, executionNode, overrides) {
+    constructor(transaction, kettleAddress, overrides) {
         var _a;
         _ConfidentialComputeRecord_instances.add(this);
-        this.nonce = transaction.nonce || (overrides === null || overrides === void 0 ? void 0 : overrides.nonce);
+        this.nonce = transaction.nonce || (overrides === null || overrides === void 0 ? void 0 : overrides.nonce) || 0;
         this.to = ((_a = transaction.to) === null || _a === void 0 ? void 0 : _a.toString()) || (overrides === null || overrides === void 0 ? void 0 : overrides.to) || ethers_1.ethers.ZeroAddress;
         this.gas = transaction.gasLimit || transaction.gas || (overrides === null || overrides === void 0 ? void 0 : overrides.gas);
-        this.gasPrice = transaction.gasPrice || (overrides === null || overrides === void 0 ? void 0 : overrides.gasPrice);
+        this.gasPrice = transaction.gasPrice || (overrides === null || overrides === void 0 ? void 0 : overrides.gasPrice) || '0x';
         this.value = transaction.value || (overrides === null || overrides === void 0 ? void 0 : overrides.value) || '0x';
         this.data = transaction.data || transaction.input || (overrides === null || overrides === void 0 ? void 0 : overrides.data);
-        this.executionNode = executionNode || (overrides === null || overrides === void 0 ? void 0 : overrides.executionNode);
-        this.chainId = transaction.chainId || (overrides === null || overrides === void 0 ? void 0 : overrides.chainId);
+        this.kettleAddress = kettleAddress || (overrides === null || overrides === void 0 ? void 0 : overrides.kettleAddress);
+        this.chainId = transaction.chainId || (overrides === null || overrides === void 0 ? void 0 : overrides.chainId) || 1;
         __classPrivateFieldGet(this, _ConfidentialComputeRecord_instances, "m", _ConfidentialComputeRecord_checkFields).call(this, [
-            'executionNode',
+            'kettleAddress',
             'gasPrice',
             'chainId',
             'nonce',
@@ -120,7 +120,7 @@ _ConfidentialComputeRecord_instances = new WeakSet(), _ConfidentialComputeRecord
         __classPrivateFieldGet(this, _ConfidentialComputeRecord_instances, "m", _ConfidentialComputeRecord_checkField).call(this, key);
     }
 }, _ConfidentialComputeRecord_checkField = function _ConfidentialComputeRecord_checkField(key) {
-    if (!this[key]) {
+    if (this[key] === null || this[key] === undefined) {
         throw new Error(`Missing ${key}`);
     }
 };

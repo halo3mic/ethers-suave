@@ -28,7 +28,7 @@ export class ConfidentialComputeRequest {
 				ccr.to,
 				ccr.value, 
 				ccr.data, 
-				ccr.executionNode,
+				ccr.kettleAddress,
 				ccr.confidentialInputsHash,
 				ccr.chainId,
 				ccr.v, 
@@ -78,7 +78,7 @@ export class ConfidentialComputeRequest {
 		const ccr = this.confidentialComputeRecord
 
 		const elements = [
-			ccr.executionNode, 
+			ccr.kettleAddress, 
 			confidentialInputsHash, 
 			ccr.nonce, 
 			ccr.gasPrice, 
@@ -105,7 +105,7 @@ interface CCROverrides {
 	data?: string,
 	chainId?: BigNumberish,
 	confidentialInputsHash?: string,
-	executionNode?: string,
+	kettleAddress?: string,
 	v?: BigNumberish,
 	r?: BigNumberish,
 	s?: BigNumberish,
@@ -118,7 +118,7 @@ export class ConfidentialComputeRecord {
 	readonly gasPrice: BigNumberish
 	readonly value: BigNumberish
 	readonly data: string
-	readonly executionNode: string
+	readonly kettleAddress: string
 	readonly chainId: BigNumberish
 	confidentialInputsHash: null | string
 	v: null | BigNumberish
@@ -127,19 +127,19 @@ export class ConfidentialComputeRecord {
 
 	constructor(
 		transaction: any, 
-		executionNode: string,
+		kettleAddress: string,
 		overrides?: CCROverrides,
 	) {
-		this.nonce = transaction.nonce || overrides?.nonce
+		this.nonce = transaction.nonce || overrides?.nonce || 0
 		this.to = transaction.to?.toString() || overrides?.to || ethers.ZeroAddress
 		this.gas = transaction.gasLimit || transaction.gas || overrides?.gas
-		this.gasPrice = transaction.gasPrice || overrides?.gasPrice
+		this.gasPrice = transaction.gasPrice || overrides?.gasPrice || '0x'
 		this.value = transaction.value || overrides?.value || '0x'
 		this.data = transaction.data || transaction.input || overrides?.data
-		this.executionNode = executionNode || overrides?.executionNode
-		this.chainId = transaction.chainId || overrides?.chainId
+		this.kettleAddress = kettleAddress || overrides?.kettleAddress
+		this.chainId = transaction.chainId || overrides?.chainId || 1
 		this.#checkFields([
-			'executionNode',
+			'kettleAddress',
 			'gasPrice',
 			'chainId',
 			'nonce',
@@ -159,7 +159,7 @@ export class ConfidentialComputeRecord {
 	}
 
 	#checkField(key: string) {
-		if (!this[key]) {
+		if (this[key] === null || this[key] === undefined) {
 			throw new Error(`Missing ${key}`)
 		}
 	}

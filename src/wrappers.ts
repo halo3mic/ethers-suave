@@ -10,21 +10,38 @@ import {
 	InterfaceAbi,
 	Interface, 
 	Contract, 
-	Wallet, 
+	Wallet,
+	BaseContract,
+	ContractRunner,
 } from 'ethers'
 
 
 export class SuaveProvider extends JsonRpcProvider {
-	executionNode: string | null
+	#kettleAddress: string | undefined
 
-	constructor(url: string, executionNode: string = null) {
+	constructor(url: string) {
 		super(url)
-		this.executionNode = executionNode
 	}
 
 	async getConfidentialTransaction(hash: string): Promise<ConfidentialTransactionResponse> {
 		const raw = await super.send('eth_getTransactionByHash', [hash])
 		return new ConfidentialTransactionResponse(raw, this)
+	}
+
+	async getKettleAddress(): Promise<string> {
+		if (!this.#kettleAddress) {
+			const kettleAddress = await this.#getKettleAddress()
+			this.setKettleAddress(kettleAddress)
+		}
+		return this.#kettleAddress
+	}
+
+	setKettleAddress(address: string) {
+		this.#kettleAddress = address
+	}
+
+	async #getKettleAddress(): Promise<string> {
+		return this.send('eth_kettleAddress', []).then(r => r[0])
 	}
 
 }
@@ -35,6 +52,14 @@ export class SuaveWallet extends Wallet {
 		super(privateKey, provider)
 		this.sprovider = provider
 	}
+	
+	static random(provider?: SuaveProvider): SuaveWallet {
+		return new SuaveWallet(Wallet.createRandom().privateKey, provider)
+	}
+
+	static fromWallet(wallet: Wallet, provider?: SuaveProvider): SuaveWallet {
+		return new SuaveWallet(wallet.privateKey, provider)
+	}
 
 }
 
@@ -43,14 +68,15 @@ interface ExtendedContractMethod extends BaseContractMethod<any[], any, any> {
     sendConfidentialRequest?: (args: any) => Promise<ConfidentialTransactionResponse>;
 }
 
-export class SuaveContract {
+export class SuaveContract extends BaseContract {
 	[k: string]: any;
-	wallet: SuaveWallet
+	runner: ContractRunner
 	inner: Contract
 
-	constructor(address: string, abi: Interface | InterfaceAbi, wallet: SuaveWallet) {
-		this.inner = new Contract(address, abi, wallet)
-		this.wallet = wallet
+	constructor(address: string, abi: Interface | InterfaceAbi, runner: ContractRunner) {
+		super(address, abi, runner)
+		this.inner = new Contract(address, abi, runner)
+		this.wallet = runner
 
 		return new Proxy(this, {
 			get: (target, prop, receiver): ExtendedContractMethod | any => {
@@ -59,15 +85,13 @@ export class SuaveContract {
 					const extendedMethod: ExtendedContractMethod = item
 
 					const prepareConfidentialRequest = async (...args: any[]): Promise<ConfidentialComputeRequest> => {
-						const overrides = args[args.length - 1]
+						const overrides = args[args.length - 1] || {}
 						const contractTx = await extendedMethod.populateTransaction(...args)
 						contractTx.type = 0
 						contractTx.gasLimit = BigInt(overrides.gasLimit || 1e7)
 						const filledTx = await target.wallet.populateTransaction(contractTx)
-						if (wallet.sprovider.executionNode === null) {
-							throw new Error('No execution node set')
-						}
-						const crc = new ConfidentialComputeRecord(filledTx, wallet.sprovider.executionNode)
+						const kettleAddress = await (runner.provider as SuaveProvider).getKettleAddress()
+						const crc = new ConfidentialComputeRecord(filledTx, kettleAddress)
 						const crq = new ConfidentialComputeRequest(crc, overrides.confidentialInputs)
 						return crq
 					}
@@ -86,6 +110,15 @@ export class SuaveContract {
 
 					return extendedMethod
 				}
+
+				const actions = {
+					'connect': (wallet: SuaveWallet) => target.connect(wallet),
+					'attach': (address: string) => target.attach(address)
+				}
+				if (actions[prop as string]) {
+					return actions[prop as string]
+				}
+
 				return item as ExtendedContractMethod
 			},
 			has: (target, prop) => {
@@ -94,35 +127,53 @@ export class SuaveContract {
 		})
 
 	}
+
+	connect(wallet: SuaveWallet): SuaveContract {
+		return new SuaveContract(this.inner.target as string, this.inner.interface, wallet)
+	}
+
+	attach(address: string): SuaveContract {
+		return new SuaveContract(address, this.inner.interface, this.wallet)
+	}
     
 	#formatSubmissionError(error: any) {
 		const errMsg = error?.error?.message
 		if (!errMsg) {
-			throw new Error('Unknown error')
+			const err = error || 'Unknown error'
+			throw new ConfidentialRequestError(err)
 		}
 		const re = /^execution reverted: (?<msg>0x([0-f][0-f])*)/
-		const errSlice = errMsg.match(re).groups?.msg
-		if (!errSlice) {
-			throw new Error(errMsg)
+		const matched = errMsg.match(re)
+		if (!matched || !matched.groups?.msg) {
+			throw new ConfidentialRequestError(errMsg)
 		}
+		const errSlice = matched.groups.msg
 		let parsedErr
 		try {
 			parsedErr = this.inner.interface.parseError(errSlice)
 		} catch {
-			throw new Error(errMsg)
+			throw new ConfidentialExecutionError(errMsg)
 		}
 		const fargs = parsedErr.args.join('\', \'')
 		const fmsg = `${parsedErr.name}('${fargs}')\n`
 
-		throw new ConfidentialCallError(fmsg)
+		throw new ConfidentialExecutionError(fmsg)
 	}
 }
 
-class ConfidentialCallError extends Error {
+class ConfidentialExecutionError extends Error {
 	constructor(message: string) {
 		super(message)
 		this.name = 'ConfidentialCallError'
-		this.stack = this.stack.replace(/^Error\n/, `${this.name}: `)
+		this.stack = this.stack.replace(/^.*Error: /, `${this.name}: `)
+	}
+}
+
+class ConfidentialRequestError extends Error {
+	constructor(message: string) {
+		super(message)
+		this.name = 'ConfidentialRequestError'
+		this.stack = this.stack.replace(/^.*Error: /, `${this.name}: `)
 	}
 }
 

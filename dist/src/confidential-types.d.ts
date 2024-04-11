@@ -19,7 +19,7 @@ interface CCROverrides {
     data?: string;
     chainId?: BigNumberish;
     confidentialInputsHash?: string;
-    executionNode?: string;
+    kettleAddress?: string;
     v?: BigNumberish;
     r?: BigNumberish;
     s?: BigNumberish;
@@ -32,13 +32,13 @@ export declare class ConfidentialComputeRecord {
     readonly gasPrice: BigNumberish;
     readonly value: BigNumberish;
     readonly data: string;
-    readonly executionNode: string;
+    readonly kettleAddress: string;
     readonly chainId: BigNumberish;
     confidentialInputsHash: null | string;
     v: null | BigNumberish;
     r: null | BigNumberish;
     s: null | BigNumberish;
-    constructor(transaction: any, executionNode: string, overrides?: CCROverrides);
+    constructor(transaction: any, kettleAddress: string, overrides?: CCROverrides);
 }
 export type SigSplit = {
     r: string;
