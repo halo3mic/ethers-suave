@@ -4,10 +4,14 @@ export {
 	SuaveContract,
 	SuaveProvider,
 	SuaveWallet,
+	SuaveBrowserProvider,
+	SuaveJsonRpcProvider,
+	SuaveRpcSigner,
+	SuaveSigner,
 } from './wrappers'
 export {
 	ConfidentialComputeRequest,
-	ConfidentialComputeRecord
+	ConfidentialComputeRecord,
 } from './confidential-types'
 
 import { txToBundleBytes, bundleToBytes } from './utils'

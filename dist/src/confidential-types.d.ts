@@ -1,12 +1,12 @@
-import { Wallet, BigNumberish } from 'ethers';
+import { Wallet, BigNumberish, Signature } from 'ethers';
 export declare class ConfidentialComputeRequest {
     #private;
     readonly confidentialComputeRecord: ConfidentialComputeRecord;
     readonly confidentialInputs: string;
     constructor(confidentialComputeRecord: ConfidentialComputeRecord, confidentialInputs?: string);
     rlpEncode(): string;
-    signWithAsyncCallback(callback: (hash: string) => Promise<SigSplit>): Promise<ConfidentialComputeRequest>;
-    signWithCallback(callback: (hash: string) => SigSplit): ConfidentialComputeRequest;
+    signWithAsyncCallback(callback: (hash: string) => Promise<Signature>): Promise<ConfidentialComputeRequest>;
+    signWithCallback(callback: (hash: string) => Signature): ConfidentialComputeRequest;
     signWithWallet(wallet: Wallet): ConfidentialComputeRequest;
     signWithPK(pk: string): ConfidentialComputeRequest;
 }

@@ -1,4 +1,4 @@
-import { ethers, Wallet, BigNumberish } from 'ethers'
+import { ethers, Wallet, BigNumberish, Signature } from 'ethers'
 import { parseHexArg, keccak256, removeLeadingZeros } from './utils'
 import {
 	CONFIDENTIAL_COMPUTE_REQUEST_TYPE,
@@ -43,29 +43,16 @@ export class ConfidentialComputeRequest {
 		return encodedWithPrefix
 	}
 
-	async signWithAsyncCallback(callback: (hash: string) => Promise<SigSplit>): Promise<ConfidentialComputeRequest> {
-		return callback(this.#hash()).then((sig) => {
-			const { v, s, r } = parseSignature(sig)
-			this.confidentialComputeRecord.r = r
-			this.confidentialComputeRecord.s = s
-			this.confidentialComputeRecord.v = v
-			return this
-		})
+	async signWithAsyncCallback(callback: (hash: string) => Promise<Signature>): Promise<ConfidentialComputeRequest> {
+		return callback(this.#hash()).then(this.#setSignature)
 	}
 
-	signWithCallback(callback: (hash: string) => SigSplit): ConfidentialComputeRequest {
-		const { v, s, r } = parseSignature(callback(this.#hash()))
-		this.confidentialComputeRecord.r = r
-		this.confidentialComputeRecord.s = s
-		this.confidentialComputeRecord.v = v
-		return this
+	signWithCallback(callback: (hash: string) => Signature): ConfidentialComputeRequest {
+		return this.#setSignature(callback(this.#hash()))
 	}
 
 	signWithWallet(wallet: Wallet): ConfidentialComputeRequest {
-		return this.signWithCallback((h) => {
-			const sig = wallet.signingKey.sign(h)
-			return { v: sig.v, r: sig.r, s: sig.s }
-		})
+		return this.signWithCallback((h) => wallet.signingKey.sign(h))
 	}
 
 	signWithPK(pk: string): ConfidentialComputeRequest {
@@ -92,6 +79,14 @@ export class ConfidentialComputeRequest {
 		const hash = keccak256(encodedWithPrefix)
 
 		return hash
+	}
+
+	#setSignature(sig: Signature): ConfidentialComputeRequest {
+		const { r, s, v } = parseSignature(sig)
+		this.confidentialComputeRecord.r = r
+		this.confidentialComputeRecord.s = s
+		this.confidentialComputeRecord.v = v
+		return this
 	}
 
 }
@@ -171,9 +166,10 @@ export type SigSplit = {
     v: number,
 }
 
-function parseSignature(sig: SigSplit): SigSplit {
-	sig.r = removeLeadingZeros(sig.r)
-	sig.s = removeLeadingZeros(sig.s)
-	sig.v = Number(sig.v) == 27 ? 0 : 1
-	return sig
+function parseSignature(sig: Signature): SigSplit {
+	return {
+		r: removeLeadingZeros(sig.r),
+		s: removeLeadingZeros(sig.s),
+		v: Number(sig.v) == 27 ? 0 : 1,
+	}
 }

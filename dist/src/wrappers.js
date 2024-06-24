@@ -1,45 +1,76 @@
 "use strict";
-var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (receiver, state, kind, f) {
-    if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a getter");
-    if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot read private member from an object whose class did not declare it");
-    return kind === "m" ? f : kind === "a" ? f.call(receiver) : f ? f.value : state.get(receiver);
-};
 var __classPrivateFieldSet = (this && this.__classPrivateFieldSet) || function (receiver, state, value, kind, f) {
     if (kind === "m") throw new TypeError("Private method is not writable");
     if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a setter");
     if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot write private member to an object whose class did not declare it");
     return (kind === "a" ? f.call(receiver, value) : f ? f.value = value : state.set(receiver, value)), value;
 };
-var _SuaveProvider_instances, _SuaveProvider_kettleAddress, _SuaveProvider_getKettleAddress, _SuaveContract_instances, _SuaveContract_formatSubmissionError, _ConfidentialTransactionResponse_provider;
+var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (receiver, state, kind, f) {
+    if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a getter");
+    if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot read private member from an object whose class did not declare it");
+    return kind === "m" ? f : kind === "a" ? f.call(receiver) : f ? f.value : state.get(receiver);
+};
+var _SuaveJsonRpcProvider_instances, _SuaveJsonRpcProvider_kettleAddress, _SuaveJsonRpcProvider_getKettleAddress, _SuaveBrowserProvider_instances, _SuaveBrowserProvider_kettleAddress, _SuaveBrowserProvider_getKettleAddress, _SuaveContract_instances, _SuaveContract_throwFormattedSubmissionError, _SuaveContract_isRunnerSigner, _SuaveContract_provider, _ConfidentialTransactionResponse_provider;
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.RequestRecord = exports.ConfidentialTransactionResponse = exports.SuaveContract = exports.SuaveWallet = exports.SuaveProvider = void 0;
+exports.RequestRecord = exports.ConfidentialTransactionResponse = exports.SuaveContract = exports.SuaveRpcSigner = exports.SuaveWallet = exports.SuaveSigner = exports.SuaveBrowserProvider = exports.SuaveJsonRpcProvider = exports.SuaveProvider = void 0;
 const confidential_types_1 = require("./confidential-types");
 const ethers_1 = require("ethers");
-class SuaveProvider extends ethers_1.JsonRpcProvider {
+class SuaveProvider extends ethers_1.JsonRpcApiProvider {
+}
+exports.SuaveProvider = SuaveProvider;
+class SuaveJsonRpcProvider extends ethers_1.JsonRpcProvider {
     constructor(url) {
         super(url);
-        _SuaveProvider_instances.add(this);
-        _SuaveProvider_kettleAddress.set(this, void 0);
+        _SuaveJsonRpcProvider_instances.add(this);
+        _SuaveJsonRpcProvider_kettleAddress.set(this, void 0);
+    }
+    setKettleAddress(address) {
+        __classPrivateFieldSet(this, _SuaveJsonRpcProvider_kettleAddress, address, "f");
     }
     async getConfidentialTransaction(hash) {
         const raw = await super.send('eth_getTransactionByHash', [hash]);
         return new ConfidentialTransactionResponse(raw, this);
     }
     async getKettleAddress() {
-        if (!__classPrivateFieldGet(this, _SuaveProvider_kettleAddress, "f")) {
-            const kettleAddress = await __classPrivateFieldGet(this, _SuaveProvider_instances, "m", _SuaveProvider_getKettleAddress).call(this);
+        if (!__classPrivateFieldGet(this, _SuaveJsonRpcProvider_kettleAddress, "f")) {
+            const kettleAddress = await __classPrivateFieldGet(this, _SuaveJsonRpcProvider_instances, "m", _SuaveJsonRpcProvider_getKettleAddress).call(this);
             this.setKettleAddress(kettleAddress);
         }
-        return __classPrivateFieldGet(this, _SuaveProvider_kettleAddress, "f");
-    }
-    setKettleAddress(address) {
-        __classPrivateFieldSet(this, _SuaveProvider_kettleAddress, address, "f");
+        return __classPrivateFieldGet(this, _SuaveJsonRpcProvider_kettleAddress, "f");
     }
 }
-exports.SuaveProvider = SuaveProvider;
-_SuaveProvider_kettleAddress = new WeakMap(), _SuaveProvider_instances = new WeakSet(), _SuaveProvider_getKettleAddress = async function _SuaveProvider_getKettleAddress() {
+exports.SuaveJsonRpcProvider = SuaveJsonRpcProvider;
+_SuaveJsonRpcProvider_kettleAddress = new WeakMap(), _SuaveJsonRpcProvider_instances = new WeakSet(), _SuaveJsonRpcProvider_getKettleAddress = async function _SuaveJsonRpcProvider_getKettleAddress() {
     return this.send('eth_kettleAddress', []).then(r => r[0]);
 };
+class SuaveBrowserProvider extends ethers_1.BrowserProvider {
+    constructor(ethereum) {
+        super(ethereum);
+        _SuaveBrowserProvider_instances.add(this);
+        _SuaveBrowserProvider_kettleAddress.set(this, void 0);
+    }
+    setKettleAddress(address) {
+        __classPrivateFieldSet(this, _SuaveBrowserProvider_kettleAddress, address, "f");
+    }
+    async getConfidentialTransaction(hash) {
+        const raw = await this.send('eth_getTransactionByHash', [hash]);
+        return new ConfidentialTransactionResponse(raw, this);
+    }
+    async getKettleAddress() {
+        if (!__classPrivateFieldGet(this, _SuaveBrowserProvider_kettleAddress, "f")) {
+            const kettleAddress = await __classPrivateFieldGet(this, _SuaveBrowserProvider_instances, "m", _SuaveBrowserProvider_getKettleAddress).call(this);
+            this.setKettleAddress(kettleAddress);
+        }
+        return __classPrivateFieldGet(this, _SuaveBrowserProvider_kettleAddress, "f");
+    }
+}
+exports.SuaveBrowserProvider = SuaveBrowserProvider;
+_SuaveBrowserProvider_kettleAddress = new WeakMap(), _SuaveBrowserProvider_instances = new WeakSet(), _SuaveBrowserProvider_getKettleAddress = async function _SuaveBrowserProvider_getKettleAddress() {
+    return this.send('eth_kettleAddress', []).then(r => r[0]);
+};
+class SuaveSigner extends ethers_1.AbstractSigner {
+}
+exports.SuaveSigner = SuaveSigner;
 class SuaveWallet extends ethers_1.Wallet {
     constructor(privateKey, provider) {
         super(privateKey, provider);
@@ -51,14 +82,25 @@ class SuaveWallet extends ethers_1.Wallet {
     static fromWallet(wallet, provider) {
         return new SuaveWallet(wallet.privateKey, provider);
     }
+    async signCCR(ccr) {
+        return ccr.signWithCallback((h) => this.signingKey.sign(h));
+    }
 }
 exports.SuaveWallet = SuaveWallet;
+class SuaveRpcSigner extends ethers_1.JsonRpcSigner {
+    constructor(provider, address) {
+        super(provider, address);
+    }
+    async signCCR(ccr) {
+        return ccr.signWithAsyncCallback(async (h) => this._legacySignMessage(h).then(ethers_1.Signature.from));
+    }
+}
+exports.SuaveRpcSigner = SuaveRpcSigner;
 class SuaveContract extends ethers_1.BaseContract {
     constructor(address, abi, runner) {
         super(address, abi, runner);
         _SuaveContract_instances.add(this);
         this.inner = new ethers_1.Contract(address, abi, runner);
-        this.wallet = runner;
         return new Proxy(this, {
             get: (target, prop, receiver) => {
                 const item = Reflect.get(target.inner, prop, receiver);
@@ -66,23 +108,38 @@ class SuaveContract extends ethers_1.BaseContract {
                     const extendedMethod = item;
                     const prepareConfidentialRequest = async (...args) => {
                         const overrides = args[args.length - 1] || {};
-                        const contractTx = await extendedMethod.populateTransaction(...args);
-                        contractTx.type = 0;
-                        contractTx.gasLimit = BigInt(overrides.gasLimit || 1e7);
-                        const filledTx = await target.wallet.populateTransaction(contractTx);
-                        const kettleAddress = await runner.provider.getKettleAddress();
-                        const crc = new confidential_types_1.ConfidentialComputeRecord(filledTx, kettleAddress);
+                        let tx = (await extendedMethod.populateTransaction(...args));
+                        tx.type = 0;
+                        tx.gasLimit = BigInt(overrides.gasLimit || 1e7);
+                        if (__classPrivateFieldGet(this, _SuaveContract_instances, "m", _SuaveContract_isRunnerSigner).call(this)) {
+                            tx = await target.runner.populateTransaction(tx);
+                        }
+                        else {
+                            const provider = __classPrivateFieldGet(this, _SuaveContract_instances, "m", _SuaveContract_provider).call(this);
+                            tx.nonce = overrides.nonce === undefined && tx.from
+                                ? await provider.getTransactionCount(tx.from)
+                                : overrides.nonce;
+                            tx.chainId = await provider.send('eth_chainId', []);
+                            tx.gasPrice = overrides.gasPrice == undefined ?
+                                await provider.send('eth_gasPrice', []) :
+                                overrides.gasPrice;
+                        }
+                        const kettleAddress = await __classPrivateFieldGet(this, _SuaveContract_instances, "m", _SuaveContract_provider).call(this).getKettleAddress();
+                        const crc = new confidential_types_1.ConfidentialComputeRecord(tx, kettleAddress);
                         const crq = new confidential_types_1.ConfidentialComputeRequest(crc, overrides.confidentialInputs);
                         return crq;
                     };
                     extendedMethod.prepareConfidentialRequest = prepareConfidentialRequest;
                     extendedMethod.sendConfidentialRequest = async (...args) => {
+                        if (!__classPrivateFieldGet(this, _SuaveContract_instances, "m", _SuaveContract_isRunnerSigner).call(this)) {
+                            throw new Error('Runner must be a wallet to send confidential requests');
+                        }
                         const crq = (await prepareConfidentialRequest(...args))
-                            .signWithWallet(target.wallet)
+                            .signWithWallet(target.runner)
                             .rlpEncode();
-                        const sprovider = target.wallet.sprovider;
+                        const sprovider = __classPrivateFieldGet(target, _SuaveContract_instances, "m", _SuaveContract_provider).call(target);
                         const txhash = await sprovider.send('eth_sendRawTransaction', [crq])
-                            .catch(__classPrivateFieldGet(target, _SuaveContract_instances, "m", _SuaveContract_formatSubmissionError).bind(target));
+                            .catch(__classPrivateFieldGet(target, _SuaveContract_instances, "m", _SuaveContract_throwFormattedSubmissionError).bind(target));
                         const txRes = await sprovider.getConfidentialTransaction(txhash);
                         return txRes;
                     };
@@ -108,31 +165,44 @@ class SuaveContract extends ethers_1.BaseContract {
     attach(address) {
         return new SuaveContract(address, this.inner.interface, this.wallet);
     }
+    formatSubmissionError(error) {
+        var _a, _b;
+        const errMsg = (_a = error === null || error === void 0 ? void 0 : error.error) === null || _a === void 0 ? void 0 : _a.message;
+        if (!errMsg) {
+            const err = error || 'Unknown error';
+            throw new ConfidentialRequestError(err);
+        }
+        const re = /^execution reverted: (?<msg>0x([0-f][0-f])*)/;
+        const matched = errMsg.match(re);
+        if (!matched || !((_b = matched.groups) === null || _b === void 0 ? void 0 : _b.msg)) {
+            throw new ConfidentialRequestError(errMsg);
+        }
+        const errSlice = matched.groups.msg;
+        let parsedErr;
+        try {
+            parsedErr = this.inner.interface.parseError(errSlice);
+        }
+        catch (_c) {
+            throw new ConfidentialExecutionError(errMsg);
+        }
+        const fargs = parsedErr.args.join('\', \'');
+        const fmsg = `${parsedErr.name}('${fargs}')\n`;
+        return fmsg;
+    }
 }
 exports.SuaveContract = SuaveContract;
-_SuaveContract_instances = new WeakSet(), _SuaveContract_formatSubmissionError = function _SuaveContract_formatSubmissionError(error) {
-    var _a, _b;
-    const errMsg = (_a = error === null || error === void 0 ? void 0 : error.error) === null || _a === void 0 ? void 0 : _a.message;
-    if (!errMsg) {
-        const err = error || 'Unknown error';
-        throw new ConfidentialRequestError(err);
-    }
-    const re = /^execution reverted: (?<msg>0x([0-f][0-f])*)/;
-    const matched = errMsg.match(re);
-    if (!matched || !((_b = matched.groups) === null || _b === void 0 ? void 0 : _b.msg)) {
-        throw new ConfidentialRequestError(errMsg);
-    }
-    const errSlice = matched.groups.msg;
-    let parsedErr;
-    try {
-        parsedErr = this.inner.interface.parseError(errSlice);
-    }
-    catch (_c) {
-        throw new ConfidentialExecutionError(errMsg);
-    }
-    const fargs = parsedErr.args.join('\', \'');
-    const fmsg = `${parsedErr.name}('${fargs}')\n`;
+_SuaveContract_instances = new WeakSet(), _SuaveContract_throwFormattedSubmissionError = function _SuaveContract_throwFormattedSubmissionError(error) {
+    const fmsg = this.formatSubmissionError(error);
     throw new ConfidentialExecutionError(fmsg);
+}, _SuaveContract_isRunnerSigner = function _SuaveContract_isRunnerSigner() {
+    return this.runner instanceof SuaveWallet || this.runner instanceof SuaveRpcSigner;
+}, _SuaveContract_provider = function _SuaveContract_provider() {
+    if (__classPrivateFieldGet(this, _SuaveContract_instances, "m", _SuaveContract_isRunnerSigner).call(this)) {
+        return this.runner.sprovider;
+    }
+    else {
+        return this.runner;
+    }
 };
 class ConfidentialExecutionError extends Error {
     constructor(message) {

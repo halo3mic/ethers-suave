@@ -4,7 +4,7 @@ var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (
     if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot read private member from an object whose class did not declare it");
     return kind === "m" ? f : kind === "a" ? f.call(receiver) : f ? f.value : state.get(receiver);
 };
-var _ConfidentialComputeRequest_instances, _ConfidentialComputeRequest_hash, _ConfidentialComputeRecord_instances, _ConfidentialComputeRecord_checkFields, _ConfidentialComputeRecord_checkField;
+var _ConfidentialComputeRequest_instances, _ConfidentialComputeRequest_hash, _ConfidentialComputeRequest_setSignature, _ConfidentialComputeRecord_instances, _ConfidentialComputeRecord_checkFields, _ConfidentialComputeRecord_checkField;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ConfidentialComputeRecord = exports.ConfidentialComputeRequest = void 0;
 const ethers_1 = require("ethers");
@@ -43,26 +43,13 @@ class ConfidentialComputeRequest {
         return encodedWithPrefix;
     }
     async signWithAsyncCallback(callback) {
-        return callback(__classPrivateFieldGet(this, _ConfidentialComputeRequest_instances, "m", _ConfidentialComputeRequest_hash).call(this)).then((sig) => {
-            const { v, s, r } = parseSignature(sig);
-            this.confidentialComputeRecord.r = r;
-            this.confidentialComputeRecord.s = s;
-            this.confidentialComputeRecord.v = v;
-            return this;
-        });
+        return callback(__classPrivateFieldGet(this, _ConfidentialComputeRequest_instances, "m", _ConfidentialComputeRequest_hash).call(this)).then(__classPrivateFieldGet(this, _ConfidentialComputeRequest_instances, "m", _ConfidentialComputeRequest_setSignature));
     }
     signWithCallback(callback) {
-        const { v, s, r } = parseSignature(callback(__classPrivateFieldGet(this, _ConfidentialComputeRequest_instances, "m", _ConfidentialComputeRequest_hash).call(this)));
-        this.confidentialComputeRecord.r = r;
-        this.confidentialComputeRecord.s = s;
-        this.confidentialComputeRecord.v = v;
-        return this;
+        return __classPrivateFieldGet(this, _ConfidentialComputeRequest_instances, "m", _ConfidentialComputeRequest_setSignature).call(this, callback(__classPrivateFieldGet(this, _ConfidentialComputeRequest_instances, "m", _ConfidentialComputeRequest_hash).call(this)));
     }
     signWithWallet(wallet) {
-        return this.signWithCallback((h) => {
-            const sig = wallet.signingKey.sign(h);
-            return { v: sig.v, r: sig.r, s: sig.s };
-        });
+        return this.signWithCallback((h) => wallet.signingKey.sign(h));
     }
     signWithPK(pk) {
         return this.signWithWallet(new ethers_1.Wallet(pk));
@@ -87,6 +74,12 @@ _ConfidentialComputeRequest_instances = new WeakSet(), _ConfidentialComputeReque
     const encodedWithPrefix = const_1.CONFIDENTIAL_COMPUTE_RECORD_TYPE + rlpEncoded;
     const hash = (0, utils_1.keccak256)(encodedWithPrefix);
     return hash;
+}, _ConfidentialComputeRequest_setSignature = function _ConfidentialComputeRequest_setSignature(sig) {
+    const { r, s, v } = parseSignature(sig);
+    this.confidentialComputeRecord.r = r;
+    this.confidentialComputeRecord.s = s;
+    this.confidentialComputeRecord.v = v;
+    return this;
 };
 class ConfidentialComputeRecord {
     constructor(transaction, kettleAddress, overrides) {
@@ -125,9 +118,10 @@ _ConfidentialComputeRecord_instances = new WeakSet(), _ConfidentialComputeRecord
     }
 };
 function parseSignature(sig) {
-    sig.r = (0, utils_1.removeLeadingZeros)(sig.r);
-    sig.s = (0, utils_1.removeLeadingZeros)(sig.s);
-    sig.v = Number(sig.v) == 27 ? 0 : 1;
-    return sig;
+    return {
+        r: (0, utils_1.removeLeadingZeros)(sig.r),
+        s: (0, utils_1.removeLeadingZeros)(sig.s),
+        v: Number(sig.v) == 27 ? 0 : 1,
+    };
 }
 //# sourceMappingURL=confidential-types.js.map
