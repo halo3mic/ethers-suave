@@ -30,6 +30,7 @@ export class ConfidentialComputeRequest {
 				ccr.data, 
 				ccr.kettleAddress,
 				ccr.confidentialInputsHash,
+				ccr.isEIP712,
 				ccr.chainId,
 				ccr.v, 
 				ccr.r, 
@@ -120,6 +121,7 @@ export class ConfidentialComputeRecord {
 	readonly data: string
 	readonly kettleAddress: string
 	readonly chainId: BigNumberish
+	readonly isEIP712: boolean
 	confidentialInputsHash: null | string
 	v: null | BigNumberish
 	r: null | BigNumberish
@@ -138,6 +140,7 @@ export class ConfidentialComputeRecord {
 		this.data = transaction.data || transaction.input || overrides?.data
 		this.kettleAddress = kettleAddress || overrides?.kettleAddress
 		this.chainId = transaction.chainId || overrides?.chainId || 1
+		this.isEIP712 = false
 		this.#checkFields([
 			'kettleAddress',
 			'gasPrice',
