@@ -31,6 +31,7 @@ class ConfidentialComputeRequest {
                 ccr.data,
                 ccr.kettleAddress,
                 ccr.confidentialInputsHash,
+                ccr.isEIP712,
                 ccr.chainId,
                 ccr.v,
                 ccr.r,
@@ -100,6 +101,7 @@ class ConfidentialComputeRecord {
         this.data = transaction.data || transaction.input || (overrides === null || overrides === void 0 ? void 0 : overrides.data);
         this.kettleAddress = kettleAddress || (overrides === null || overrides === void 0 ? void 0 : overrides.kettleAddress);
         this.chainId = transaction.chainId || (overrides === null || overrides === void 0 ? void 0 : overrides.chainId) || 1;
+        this.isEIP712 = false;
         __classPrivateFieldGet(this, _ConfidentialComputeRecord_instances, "m", _ConfidentialComputeRecord_checkFields).call(this, [
             'kettleAddress',
             'gasPrice',

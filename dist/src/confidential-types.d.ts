@@ -34,6 +34,7 @@ export declare class ConfidentialComputeRecord {
     readonly data: string;
     readonly kettleAddress: string;
     readonly chainId: BigNumberish;
+    readonly isEIP712: boolean;
     confidentialInputsHash: null | string;
     v: null | BigNumberish;
     r: null | BigNumberish;
