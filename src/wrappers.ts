@@ -25,6 +25,9 @@ export class SuaveProvider extends JsonRpcProvider {
 
 	async getConfidentialTransaction(hash: string): Promise<ConfidentialTransactionResponse> {
 		const raw = await super.send('eth_getTransactionByHash', [hash])
+		if (raw === null) {
+			throw new Error(`Transaction not found: ${hash}`)
+		}
 		return new ConfidentialTransactionResponse(raw, this)
 	}
 
