@@ -23,6 +23,9 @@ class SuaveProvider extends ethers_1.JsonRpcProvider {
     }
     async getConfidentialTransaction(hash) {
         const raw = await super.send('eth_getTransactionByHash', [hash]);
+        if (raw === null) {
+            throw new Error(`Transaction not found: ${hash}`);
+        }
         return new ConfidentialTransactionResponse(raw, this);
     }
     async getKettleAddress() {
