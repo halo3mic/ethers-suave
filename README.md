@@ -4,14 +4,14 @@ A typescript library, built on top of ethers.js, for interacting with Suave conf
 
 ## Usage
 
-#### Send confidential request
+#### Send confidential request with ABI
 ```typescript
 const provider = new SuaveProvider(kettleUrl)
 const wallet = new SuaveWallet(pk, provider)
 
-const StoreContract = new SuaveContract(confidentialContractAdd, storeABI, wallet)
+const StoreContract = new SuaveContract(storeContractAdd, storeABI, wallet)
 const milkLiters = 2
-const milkType = 'whole'
+const milkType = 1 // 'whole'
 // Non-confidential methods are called as usual
 const milkPrice = await StoreContract.milkSpotPrice(milkType)
 const confidentialInputs = createPaymentBundle(milkPrice, milkLiters)
@@ -31,6 +31,15 @@ const ccr = await StoreContract.buyMilk.prepareConfidentialRequest(milkType, mil
 const tx = await provider.getConfidentialTransaction('0xafac2...')
 ```
 
+#### Send/Populate confidential request without ABI
+```typescript
+const crecordlike = {
+    data: '0x966a0212...',
+    to: storeContractAdd
+}
+const crecord = await wallet.populateCRecord(crecordlike)
+const confidentialTxResponse = await wallet.sendCCR(crecordlike, confidentialInputs)
+```
 
 ## Dev Setup
 #### Install dependencies
