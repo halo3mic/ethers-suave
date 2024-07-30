@@ -112,7 +112,7 @@ _ConfidentialComputeRecord_instances = new WeakSet(), _ConfidentialComputeRecord
     }
 };
 function parseSignature(sig) {
-    let sigParsed = {};
+    const sigParsed = {};
     sigParsed.r = (0, utils_1.removeLeadingZeros)(sig.r);
     sigParsed.s = (0, utils_1.removeLeadingZeros)(sig.s);
     sigParsed.v = sig.v - 27;

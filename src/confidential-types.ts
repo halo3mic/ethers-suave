@@ -146,7 +146,7 @@ export class ConfidentialComputeRecord {
 }
 
 function parseSignature(sig: Signature): SigSplit {
-	let sigParsed = {} as SigSplit
+	const sigParsed = {} as SigSplit
 	sigParsed.r = removeLeadingZeros(sig.r)
 	sigParsed.s = removeLeadingZeros(sig.s)
 	sigParsed.v = sig.v - 27

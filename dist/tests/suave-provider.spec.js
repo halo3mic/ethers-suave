@@ -135,20 +135,20 @@ describe('Confidential Provider/Wallet/Contract', async () => {
         const wallet = new src_1.SuaveWallet(pk, provider);
         const iface = new ethers_1.ethers.Interface(['function queryLatestPrice(string)', 'function DECIMALS()']);
         const oracle_address = '0x48931D75dD8A617F6aC7176EE131F90AC779FEB0';
-        let cresponse = await wallet.sendCCR({
+        const cresponse = await wallet.sendCCR({
             data: iface.encodeFunctionData('queryLatestPrice', ['ETHUSDT']),
             to: oracle_address,
             gas: 300000,
         });
         expect(cresponse).to.have.property('requestRecord');
         expect(cresponse).to.have.property('confidentialComputeResult');
-        let [price_raw] = ethers_1.ethers.AbiCoder.defaultAbiCoder()
+        const [price_raw] = ethers_1.ethers.AbiCoder.defaultAbiCoder()
             .decode(['uint256'], cresponse.confidentialComputeResult);
-        let dec = await provider.call({
+        const dec = await provider.call({
             data: iface.encodeFunctionData('DECIMALS'),
             to: oracle_address,
         }).then(res => parseInt(res.slice(65, 66)[0]));
-        let price = parseInt(price_raw) / 10 ** dec;
+        const price = parseInt(price_raw) / 10 ** dec;
         expect(price).to.be.above(100).and.below(20000);
         console.log(price);
     }).timeout(10000);

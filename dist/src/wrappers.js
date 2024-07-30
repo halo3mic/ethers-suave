@@ -69,11 +69,11 @@ class SuaveWallet extends ethers_1.Wallet {
     }
     async populateCRecord(crecord) {
         var _a, _b, _c;
-        const provider = checkProvider(this, "populateTransaction");
+        const provider = checkProvider(this, 'populateTransaction');
         const resolvedCRecord = await (0, ethers_1.resolveProperties)({
             ...crecord,
             gas: BigInt((_a = crecord.gas) !== null && _a !== void 0 ? _a : utils_1.DEFAULT_GAS_LIMIT),
-            nonce: (_b = crecord.nonce) !== null && _b !== void 0 ? _b : this.getNonce("pending"),
+            nonce: (_b = crecord.nonce) !== null && _b !== void 0 ? _b : this.getNonce('pending'),
             gasPrice: (_c = crecord.gasPrice) !== null && _c !== void 0 ? _c : provider.getFeeData().then(fd => fd.gasPrice),
         });
         const network = await provider.getNetwork();
@@ -81,14 +81,14 @@ class SuaveWallet extends ethers_1.Wallet {
             resolvedCRecord.chainId = network.chainId;
         }
         else if (resolvedCRecord.chainId !== network.chainId) {
-            throw new Error("chainId mismatch");
+            throw new Error('chainId mismatch');
         }
         const kettleAddress = await provider.getKettleAddress();
         if (resolvedCRecord.kettleAddress == null) {
             resolvedCRecord.kettleAddress = kettleAddress;
         }
         else if (resolvedCRecord.kettleAddress !== kettleAddress) {
-            throw new Error("kettleAddress mismatch");
+            throw new Error('kettleAddress mismatch');
         }
         return new confidential_types_1.ConfidentialComputeRecord(resolvedCRecord);
     }
@@ -113,9 +113,9 @@ class SuaveContract extends ethers_1.BaseContract {
                 if (typeof item === 'function' && target.inner.interface.hasFunction(prop)) {
                     const extendedMethod = item;
                     const prepareCCR = async (...args) => {
-                        let fragment = extendedMethod.getFragment(...args);
+                        const fragment = extendedMethod.getFragment(...args);
                         const raw_overrides = fragment.inputs.length + 1 === args.length ? args.pop() : {};
-                        let crecord = { ...raw_overrides };
+                        const crecord = { ...raw_overrides };
                         crecord.data = this.interface.encodeFunctionData(fragment, args);
                         crecord.to = await this.getAddress();
                         const crecordPop = await __classPrivateFieldGet(this, _SuaveContract_instances, "m", _SuaveContract_signer).call(this).populateCRecord(crecord);

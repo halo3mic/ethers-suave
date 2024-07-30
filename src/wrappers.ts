@@ -67,7 +67,7 @@ function checkProvider(signer: SuaveSigner, operation: string): SuaveProvider {
 	if (!signer.sprovider) {
 		throw new Error('missing provider for ' + operation)
 	}
-    return signer.sprovider
+	return signer.sprovider
 }
 
 export class SuaveWallet extends Wallet implements SuaveSigner {
@@ -91,30 +91,30 @@ export class SuaveWallet extends Wallet implements SuaveSigner {
 	}
 
 	async populateCRecord(crecord: CRecordLike): Promise<ConfidentialComputeRecord> {
-        const provider = checkProvider(this, "populateTransaction");
+		const provider = checkProvider(this, 'populateTransaction')
 
 		const resolvedCRecord = await resolveProperties({
 			...crecord,
 			gas: BigInt(crecord.gas ?? DEFAULT_GAS_LIMIT),
-			nonce: crecord.nonce ?? this.getNonce("pending"),
+			nonce: crecord.nonce ?? this.getNonce('pending'),
 			gasPrice: crecord.gasPrice ?? provider.getFeeData().then(fd => fd.gasPrice),
-		});
+		})
 
-        const network = await provider.getNetwork()
-        if (resolvedCRecord.chainId == null) {
-            resolvedCRecord.chainId = network.chainId
-        } else if (resolvedCRecord.chainId !== network.chainId) {
-            throw new Error("chainId mismatch")
-        }
+		const network = await provider.getNetwork()
+		if (resolvedCRecord.chainId == null) {
+			resolvedCRecord.chainId = network.chainId
+		} else if (resolvedCRecord.chainId !== network.chainId) {
+			throw new Error('chainId mismatch')
+		}
         
-        const kettleAddress = await provider.getKettleAddress()
-        if (resolvedCRecord.kettleAddress == null) {
-            resolvedCRecord.kettleAddress = kettleAddress
-        } else if (resolvedCRecord.kettleAddress !== kettleAddress) {
-            throw new Error("kettleAddress mismatch")
-        }
+		const kettleAddress = await provider.getKettleAddress()
+		if (resolvedCRecord.kettleAddress == null) {
+			resolvedCRecord.kettleAddress = kettleAddress
+		} else if (resolvedCRecord.kettleAddress !== kettleAddress) {
+			throw new Error('kettleAddress mismatch')
+		}
 
-		return new ConfidentialComputeRecord(resolvedCRecord);
+		return new ConfidentialComputeRecord(resolvedCRecord)
 	}
 
 	async sendCCR(crecord: CRecordLike, cinputs?: string): Promise<ConfidentialTransactionResponse> {
@@ -150,9 +150,9 @@ export class SuaveContract extends BaseContract {
 					const extendedMethod: ExtendedContractMethod = item
 
 					const prepareCCR = async (...args: any[]): Promise<ConfidentialComputeRequest> => {
-						let fragment = extendedMethod.getFragment(...args)
+						const fragment = extendedMethod.getFragment(...args)
 						const raw_overrides = fragment.inputs.length + 1 === args.length ? args.pop() : {}
-						let crecord = { ...raw_overrides } as CRecordLike
+						const crecord = { ...raw_overrides } as CRecordLike
 						crecord.data = this.interface.encodeFunctionData(fragment, args)
 						crecord.to = await this.getAddress()
 
