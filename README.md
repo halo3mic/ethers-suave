@@ -4,31 +4,49 @@ A typescript library, built on top of ethers.js, for interacting with Suave conf
 
 ## Usage
 
-#### Send confidential request
+#### Send confidential request with ABI
 ```typescript
 const provider = new SuaveProvider(kettleUrl)
 const wallet = new SuaveWallet(pk, provider)
 
-const StoreContract = new SuaveContract(confidentialContractAdd, storeABI, wallet)
+const StoreContract = new SuaveContract(storeContractAdd, storeABI, wallet)
 const milkLiters = 2
-const milkType = 'whole'
+const milkType = 1 // 'whole'
 // Non-confidential methods are called as usual
 const milkPrice = await StoreContract.milkSpotPrice(milkType)
 const confidentialInputs = createPaymentBundle(milkPrice, milkLiters)
 // Response is ConfidentialTransactionResponse 
-const res = await StoreContract.buyMilk.sendConfidentialRequest(milkType, milkLiters, { confidentialInputs })
+const res = await StoreContract.buyMilk.sendCCR(milkType, milkLiters, { confidentialInputs })
 // Receipt is a normal EVM transaction receipt
 const receipt = await res.wait()
 ```
 
 #### Create a confidential request
 ```typescript
-const ccr = await StoreContract.buyMilk.prepareConfidentialRequest(milkType, milkLiters, { confidentialInputs }) 
+const ccr = await StoreContract.buyMilk.prepareCCR(milkType, milkLiters, { confidentialInputs }) 
 ```
 
 #### Get a confidential request
 ```typescript
 const tx = await provider.getConfidentialTransaction('0xafac2...')
+```
+
+#### Send confidential request without ABI
+```typescript
+const crecordlike = {
+    data: '0x966a0212...',
+    to: storeContractAdd
+}
+const confidentialTxResponse = await wallet.sendCCR(crecordlike, confidentialInputs)
+```
+
+#### Populate confidential record without ABI
+```typescript
+const crecordlike = {
+    data: '0x966a0212...',
+    to: storeContractAdd
+}
+const crecord = await wallet.populateCRecord(crecordlike)
 ```
 
 

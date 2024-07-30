@@ -4,7 +4,7 @@ var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (
     if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot read private member from an object whose class did not declare it");
     return kind === "m" ? f : kind === "a" ? f.call(receiver) : f ? f.value : state.get(receiver);
 };
-var _ConfidentialComputeRequest_instances, _ConfidentialComputeRequest_hash, _ConfidentialComputeRecord_instances, _ConfidentialComputeRecord_checkFields, _ConfidentialComputeRecord_checkField;
+var _ConfidentialComputeRequest_instances, _ConfidentialComputeRequest_hash, _ConfidentialComputeRecord_instances, _ConfidentialComputeRecord_checkField;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ConfidentialComputeRecord = exports.ConfidentialComputeRequest = void 0;
 const ethers_1 = require("ethers");
@@ -17,24 +17,23 @@ class ConfidentialComputeRequest {
         this.confidentialInputs = confidentialInputs;
     }
     rlpEncode() {
-        const ccr = this.confidentialComputeRecord;
-        if (!ccr.confidentialInputsHash || !ccr.r || !ccr.s || ccr.v === null) {
-            throw new Error('Missing fields');
-        }
+        const crecord = this.confidentialComputeRecord;
+        crecord.checkFields(['confidentialInputsHash', 'signature']);
         const elements = [
             [
-                ccr.nonce,
-                ccr.gasPrice,
-                ccr.gas,
-                ccr.to,
-                ccr.value,
-                ccr.data,
-                ccr.kettleAddress,
-                ccr.confidentialInputsHash,
-                ccr.chainId,
-                ccr.v,
-                ccr.r,
-                ccr.s,
+                crecord.nonce,
+                crecord.gasPrice,
+                crecord.gas,
+                crecord.to,
+                crecord.value,
+                crecord.data,
+                crecord.kettleAddress,
+                crecord.confidentialInputsHash,
+                crecord.isEIP712,
+                crecord.chainId,
+                crecord.signature.v,
+                crecord.signature.r,
+                crecord.signature.s,
             ].map(utils_1.parseHexArg),
             this.confidentialInputs,
         ];
@@ -44,25 +43,16 @@ class ConfidentialComputeRequest {
     }
     async signWithAsyncCallback(callback) {
         return callback(__classPrivateFieldGet(this, _ConfidentialComputeRequest_instances, "m", _ConfidentialComputeRequest_hash).call(this)).then((sig) => {
-            const { v, s, r } = parseSignature(sig);
-            this.confidentialComputeRecord.r = r;
-            this.confidentialComputeRecord.s = s;
-            this.confidentialComputeRecord.v = v;
+            this.confidentialComputeRecord.signature = parseSignature(sig);
             return this;
         });
     }
     signWithCallback(callback) {
-        const { v, s, r } = parseSignature(callback(__classPrivateFieldGet(this, _ConfidentialComputeRequest_instances, "m", _ConfidentialComputeRequest_hash).call(this)));
-        this.confidentialComputeRecord.r = r;
-        this.confidentialComputeRecord.s = s;
-        this.confidentialComputeRecord.v = v;
+        this.confidentialComputeRecord.signature = parseSignature(callback(__classPrivateFieldGet(this, _ConfidentialComputeRequest_instances, "m", _ConfidentialComputeRequest_hash).call(this)));
         return this;
     }
     signWithWallet(wallet) {
-        return this.signWithCallback((h) => {
-            const sig = wallet.signingKey.sign(h);
-            return { v: sig.v, r: sig.r, s: sig.s };
-        });
+        return this.signWithCallback((h) => wallet.signingKey.sign(h));
     }
     signWithPK(pk) {
         return this.signWithWallet(new ethers_1.Wallet(pk));
@@ -89,45 +79,43 @@ _ConfidentialComputeRequest_instances = new WeakSet(), _ConfidentialComputeReque
     return hash;
 };
 class ConfidentialComputeRecord {
-    constructor(transaction, kettleAddress, overrides) {
-        var _a;
+    constructor(crecord) {
         _ConfidentialComputeRecord_instances.add(this);
-        this.nonce = transaction.nonce || (overrides === null || overrides === void 0 ? void 0 : overrides.nonce) || 0;
-        this.to = ((_a = transaction.to) === null || _a === void 0 ? void 0 : _a.toString()) || (overrides === null || overrides === void 0 ? void 0 : overrides.to) || ethers_1.ethers.ZeroAddress;
-        this.gas = transaction.gasLimit || transaction.gas || (overrides === null || overrides === void 0 ? void 0 : overrides.gas);
-        this.gasPrice = transaction.gasPrice || (overrides === null || overrides === void 0 ? void 0 : overrides.gasPrice) || '0x';
-        this.value = transaction.value || (overrides === null || overrides === void 0 ? void 0 : overrides.value) || '0x';
-        this.data = transaction.data || transaction.input || (overrides === null || overrides === void 0 ? void 0 : overrides.data);
-        this.kettleAddress = kettleAddress || (overrides === null || overrides === void 0 ? void 0 : overrides.kettleAddress);
-        this.chainId = transaction.chainId || (overrides === null || overrides === void 0 ? void 0 : overrides.chainId) || 1;
-        __classPrivateFieldGet(this, _ConfidentialComputeRecord_instances, "m", _ConfidentialComputeRecord_checkFields).call(this, [
+        this.chainId = crecord.chainId;
+        this.data = crecord.data;
+        this.gas = crecord.gas;
+        this.gasPrice = crecord.gasPrice;
+        this.isEIP712 = crecord.isEIP712 || false;
+        this.kettleAddress = crecord.kettleAddress;
+        this.nonce = crecord.nonce;
+        this.to = crecord.to;
+        this.checkFields([
             'kettleAddress',
             'gasPrice',
             'chainId',
             'nonce',
             'data',
             'gas',
+            'to',
         ]);
-        this.confidentialInputsHash = null;
-        this.v = null;
-        this.r = null;
-        this.s = null;
+    }
+    checkFields(keys) {
+        for (const key of keys) {
+            __classPrivateFieldGet(this, _ConfidentialComputeRecord_instances, "m", _ConfidentialComputeRecord_checkField).call(this, key);
+        }
     }
 }
 exports.ConfidentialComputeRecord = ConfidentialComputeRecord;
-_ConfidentialComputeRecord_instances = new WeakSet(), _ConfidentialComputeRecord_checkFields = function _ConfidentialComputeRecord_checkFields(keys) {
-    for (const key of keys) {
-        __classPrivateFieldGet(this, _ConfidentialComputeRecord_instances, "m", _ConfidentialComputeRecord_checkField).call(this, key);
-    }
-}, _ConfidentialComputeRecord_checkField = function _ConfidentialComputeRecord_checkField(key) {
+_ConfidentialComputeRecord_instances = new WeakSet(), _ConfidentialComputeRecord_checkField = function _ConfidentialComputeRecord_checkField(key) {
     if (this[key] === null || this[key] === undefined) {
         throw new Error(`Missing ${key}`);
     }
 };
 function parseSignature(sig) {
-    sig.r = (0, utils_1.removeLeadingZeros)(sig.r);
-    sig.s = (0, utils_1.removeLeadingZeros)(sig.s);
-    sig.v = Number(sig.v) == 27 ? 0 : 1;
-    return sig;
+    const sigParsed = {};
+    sigParsed.r = (0, utils_1.removeLeadingZeros)(sig.r);
+    sigParsed.s = (0, utils_1.removeLeadingZeros)(sig.s);
+    sigParsed.v = sig.v - 27;
+    return sigParsed;
 }
 //# sourceMappingURL=confidential-types.js.map

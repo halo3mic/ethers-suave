@@ -1,6 +1,6 @@
 {
   "name": "ethers-suave",
-  "version": "1.0.4",
+  "version": "1.1.0",
   "author": "Miha Lotric",
   "license": "MIT",
   "description": "Module for interacting with SUAVE smart contracts.",
