@@ -31,15 +31,24 @@ const ccr = await StoreContract.buyMilk.prepareCCR(milkType, milkLiters, { confi
 const tx = await provider.getConfidentialTransaction('0xafac2...')
 ```
 
-#### Send/Populate confidential request without ABI
+#### Send confidential request without ABI
+```typescript
+const crecordlike = {
+    data: '0x966a0212...',
+    to: storeContractAdd
+}
+const confidentialTxResponse = await wallet.sendCCR(crecordlike, confidentialInputs)
+```
+
+#### Populate confidential record without ABI
 ```typescript
 const crecordlike = {
     data: '0x966a0212...',
     to: storeContractAdd
 }
 const crecord = await wallet.populateCRecord(crecordlike)
-const confidentialTxResponse = await wallet.sendCCR(crecordlike, confidentialInputs)
 ```
+
 
 ## Dev Setup
 #### Install dependencies
