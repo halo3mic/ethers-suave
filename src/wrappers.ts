@@ -129,8 +129,8 @@ export class SuaveWallet extends Wallet implements SuaveSigner {
 }
 
 interface ExtendedContractMethod extends BaseContractMethod<any[], any, any> {
-    prepareConfidentialRequest?: (args: any) => Promise<ConfidentialComputeRequest>;
-    sendConfidentialRequest?: (args: any) => Promise<ConfidentialTransactionResponse>;
+    prepareCCR?: (args: any) => Promise<ConfidentialComputeRequest>;
+    sendCCR?: (args: any) => Promise<ConfidentialTransactionResponse>;
 }
 
 type SuaveContractRunner = SuaveWallet | SuaveProvider
@@ -149,7 +149,7 @@ export class SuaveContract extends BaseContract {
 				if (typeof item === 'function' && target.inner.interface.hasFunction(prop as string)) {
 					const extendedMethod: ExtendedContractMethod = item
 
-					const prepareConfidentialRequest = async (...args: any[]): Promise<ConfidentialComputeRequest> => {
+					const prepareCCR = async (...args: any[]): Promise<ConfidentialComputeRequest> => {
 						let fragment = extendedMethod.getFragment(...args)
 						const raw_overrides = fragment.inputs.length + 1 === args.length ? args.pop() : {}
 						let crecord = { ...raw_overrides } as CRecordLike
@@ -160,9 +160,9 @@ export class SuaveContract extends BaseContract {
 						return new ConfidentialComputeRequest(crecordPop, raw_overrides?.confidentialInputs)
 					}
 
-					extendedMethod.prepareConfidentialRequest = prepareConfidentialRequest
-					extendedMethod.sendConfidentialRequest = async (...args: any[]) => {
-						const ccrq = await prepareConfidentialRequest(...args)
+					extendedMethod.prepareCCR = prepareCCR
+					extendedMethod.sendCCR = async (...args: any[]) => {
+						const ccrq = await prepareCCR(...args)
 						const ccrqSigned = await this.#signer().signCCR(ccrq)
 						const ccrqSignedRlp = ccrqSigned.rlpEncode()
 						

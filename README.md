@@ -16,14 +16,14 @@ const milkType = 1 // 'whole'
 const milkPrice = await StoreContract.milkSpotPrice(milkType)
 const confidentialInputs = createPaymentBundle(milkPrice, milkLiters)
 // Response is ConfidentialTransactionResponse 
-const res = await StoreContract.buyMilk.sendConfidentialRequest(milkType, milkLiters, { confidentialInputs })
+const res = await StoreContract.buyMilk.sendCCR(milkType, milkLiters, { confidentialInputs })
 // Receipt is a normal EVM transaction receipt
 const receipt = await res.wait()
 ```
 
 #### Create a confidential request
 ```typescript
-const ccr = await StoreContract.buyMilk.prepareConfidentialRequest(milkType, milkLiters, { confidentialInputs }) 
+const ccr = await StoreContract.buyMilk.prepareCCR(milkType, milkLiters, { confidentialInputs }) 
 ```
 
 #### Get a confidential request

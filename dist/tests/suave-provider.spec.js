@@ -22,7 +22,7 @@ describe('Confidential Provider/Wallet/Contract', async () => {
         const blockadAddress = '0xa60F1B5cB70c0523A086BbCbe132C8679085ea0E';
         const BlockAd = new src_1.SuaveContract(blockadAddress, blockadAbi, wallet1);
         const BlockAd2 = BlockAd.connect(wallet2);
-        const resp = await BlockAd2.builder.sendConfidentialRequest();
+        const resp = await BlockAd2.builder.sendCCR();
         expect(resp).to.have.property('from').to.eq(wallet2.address);
     }).timeout(100000);
     it('Non-confidential call / Contract with provider', async () => {
@@ -41,7 +41,7 @@ describe('Confidential Provider/Wallet/Contract', async () => {
         const wallet = new src_1.SuaveWallet(pk, provider);
         const blockadAddress = '0xa60F1B5cB70c0523A086BbCbe132C8679085ea0E';
         const BlockAd = new src_1.SuaveContract(blockadAddress, blockadAbi, wallet);
-        const cresponse = await BlockAd.builder.sendConfidentialRequest();
+        const cresponse = await BlockAd.builder.sendCCR();
         expect(cresponse).to.have.property('requestRecord');
         expect(cresponse).to.have
             .property('confidentialComputeResult')
@@ -120,7 +120,7 @@ describe('Confidential Provider/Wallet/Contract', async () => {
         const wallet = new src_1.SuaveWallet(pk, provider);
         const blockadAddress = '0xa60F1B5cB70c0523A086BbCbe132C8679085ea0E';
         const BlockAd = new src_1.SuaveContract(blockadAddress, blockadAbi, wallet);
-        const crqPromise = BlockAd.builder.sendConfidentialRequest();
+        const crqPromise = BlockAd.builder.sendCCR();
         await expect(crqPromise).to.eventually.be.fulfilled;
     }).timeout(100000);
     it('get kettle address', async () => {
@@ -176,7 +176,7 @@ describe('err handling', async () => {
         const blockLimit = 100;
         const extra = '🚀🚀';
         const confidentialInputs = '0x000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000f37b22747873223a5b22307866383636383162613836303861393666343839383661383235323038393431366632616138646630353562366536373262393364656434316665636363616261623536356230383038303264613035333266616561616165373262383636623535356635313936613936616238356432366335643233363261326439333036336635616135333838633937336433613031396231643836336664323933396231643062353962363133393665613635333164353438306134333231633833373534313537633434623532343165616265225d2c22726576657274696e67486173686573223a5b5d7d00000000000000000000000000';
-        const crqPromise = BlockAd.buyAd.sendConfidentialRequest(blockLimit, extra, { confidentialInputs });
+        const crqPromise = BlockAd.buyAd.sendCCR(blockLimit, extra, { confidentialInputs });
         await expect(crqPromise).to.eventually.be.rejectedWith(/insufficient funds.*/);
     }).timeout(100000);
     it('wrong kettle address', async () => {
@@ -191,7 +191,7 @@ describe('err handling', async () => {
         const blockLimit = 100;
         const extra = '🚀🚀';
         const confidentialInputs = '0x000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000f37b22747873223a5b22307866383636383162613836303861393666343839383661383235323038393431366632616138646630353562366536373262393364656434316665636363616261623536356230383038303264613035333266616561616165373262383636623535356635313936613936616238356432366335643233363261326439333036336635616135333838633937336433613031396231643836336664323933396231643062353962363133393665613635333164353438306134333231633833373534313537633434623532343165616265225d2c22726576657274696e67486173686573223a5b5d7d00000000000000000000000000';
-        const crqPromise = BlockAd.buyAd.sendConfidentialRequest(blockLimit, extra, { confidentialInputs });
+        const crqPromise = BlockAd.buyAd.sendCCR(blockLimit, extra, { confidentialInputs });
         await expect(crqPromise).to.eventually.be.rejectedWith(/unknown account/);
     }).timeout(100000);
     it('wrong chain', async () => {
@@ -206,7 +206,7 @@ describe('err handling', async () => {
         const blockLimit = 100;
         const extra = '🚀🚀';
         const confidentialInputs = '0x000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000f37b22747873223a5b22307866383636383162613836303861393666343839383661383235323038393431366632616138646630353562366536373262393364656434316665636363616261623536356230383038303264613035333266616561616165373262383636623535356635313936613936616238356432366335643233363261326439333036336635616135333838633937336433613031396231643836336664323933396231643062353962363133393665613635333164353438306134333231633833373534313537633434623532343165616265225d2c22726576657274696e67486173686573223a5b5d7d00000000000000000000000000';
-        const crqPromise = BlockAd.buyAd.sendConfidentialRequest(blockLimit, extra, { confidentialInputs });
+        const crqPromise = BlockAd.buyAd.sendCCR(blockLimit, extra, { confidentialInputs });
         await expect(crqPromise).to.eventually.be.rejectedWith(/transaction type not supported/);
     });
 });

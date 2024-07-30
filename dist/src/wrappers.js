@@ -112,7 +112,7 @@ class SuaveContract extends ethers_1.BaseContract {
                 const item = Reflect.get(target.inner, prop, receiver);
                 if (typeof item === 'function' && target.inner.interface.hasFunction(prop)) {
                     const extendedMethod = item;
-                    const prepareConfidentialRequest = async (...args) => {
+                    const prepareCCR = async (...args) => {
                         let fragment = extendedMethod.getFragment(...args);
                         const raw_overrides = fragment.inputs.length + 1 === args.length ? args.pop() : {};
                         let crecord = { ...raw_overrides };
@@ -121,9 +121,9 @@ class SuaveContract extends ethers_1.BaseContract {
                         const crecordPop = await __classPrivateFieldGet(this, _SuaveContract_instances, "m", _SuaveContract_signer).call(this).populateCRecord(crecord);
                         return new confidential_types_1.ConfidentialComputeRequest(crecordPop, raw_overrides === null || raw_overrides === void 0 ? void 0 : raw_overrides.confidentialInputs);
                     };
-                    extendedMethod.prepareConfidentialRequest = prepareConfidentialRequest;
-                    extendedMethod.sendConfidentialRequest = async (...args) => {
-                        const ccrq = await prepareConfidentialRequest(...args);
+                    extendedMethod.prepareCCR = prepareCCR;
+                    extendedMethod.sendCCR = async (...args) => {
+                        const ccrq = await prepareCCR(...args);
                         const ccrqSigned = await __classPrivateFieldGet(this, _SuaveContract_instances, "m", _SuaveContract_signer).call(this).signCCR(ccrq);
                         const ccrqSignedRlp = ccrqSigned.rlpEncode();
                         const sprovider = __classPrivateFieldGet(target, _SuaveContract_instances, "m", _SuaveContract_provider).call(target);
