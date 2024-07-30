@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.bundleToBytes = exports.txToBundle = exports.txToBundleBytes = exports.removeLeadingZeros = exports.hexFillEven = exports.hexFill32 = exports.intToHex = exports.parseHexArg = exports.keccak256 = void 0;
+exports.DEFAULT_GAS_LIMIT = exports.bundleToBytes = exports.txToBundle = exports.txToBundleBytes = exports.removeLeadingZeros = exports.hexFillEven = exports.hexFill32 = exports.intToHex = exports.parseHexArg = exports.keccak256 = void 0;
 const ethers_1 = require("ethers");
 function keccak256(x) {
     return hexFill32(ethers_1.ethers.keccak256(x));
@@ -70,4 +70,5 @@ function bundleToBytes(bundle) {
     return confidentialDataBytes;
 }
 exports.bundleToBytes = bundleToBytes;
+exports.DEFAULT_GAS_LIMIT = 1e7;
 //# sourceMappingURL=utils.js.map

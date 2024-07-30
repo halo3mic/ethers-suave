@@ -2,7 +2,7 @@ import chaiAsPromised from 'chai-as-promised'
 import chai from 'chai'
 import fs from 'fs'
 
-import { ConfidentialComputeRequest, SuaveContract, SuaveProvider, SuaveWallet } from '../src'
+import { SuaveJsonRpcProvider, SuaveContract, SuaveWallet } from '../src'
 import { ethers } from 'ethers'
 
 chai.use(chaiAsPromised)
@@ -17,7 +17,7 @@ describe('Confidential Provider/Wallet/Contract', async () => {
 		const kettleUrl = 'https://rpc.toliman.suave.flashbots.net'
 		const blockadAbi = fetchJSON('./tests/abis/BlockAdAuction.json')
 
-		const provider = new SuaveProvider(kettleUrl)
+		const provider = new SuaveJsonRpcProvider(kettleUrl)
 		const wallet1 = new SuaveWallet(pk1, provider)
 		const wallet2 = new SuaveWallet(pk2, provider)
 
@@ -32,7 +32,7 @@ describe('Confidential Provider/Wallet/Contract', async () => {
 
 	it('Non-confidential call / Contract with provider', async () => {
 		const blockadAbi = fetchJSON('./tests/abis/BlockAdAuction.json')
-		const provider = new SuaveProvider('https://rpc.toliman.suave.flashbots.net')
+		const provider = new SuaveJsonRpcProvider('https://rpc.toliman.suave.flashbots.net')
 		const blockadAddress = '0xa60F1B5cB70c0523A086BbCbe132C8679085ea0E'
 		const BlockAd = new SuaveContract(blockadAddress, blockadAbi, provider)
 		const isInitialized = await BlockAd.isInitialized()
@@ -44,21 +44,21 @@ describe('Confidential Provider/Wallet/Contract', async () => {
 		const kettleUrl = 'https://rpc.toliman.suave.flashbots.net'
 		const blockadAbi = fetchJSON('./tests/abis/BlockAdAuction.json')
 
-		const provider = new SuaveProvider(kettleUrl)
+		const provider = new SuaveJsonRpcProvider(kettleUrl)
 		const wallet = new SuaveWallet(pk, provider)
 		const blockadAddress = '0xa60F1B5cB70c0523A086BbCbe132C8679085ea0E'
 
 		const BlockAd = new SuaveContract(blockadAddress, blockadAbi, wallet)
-		const crq = await BlockAd.builder.sendConfidentialRequest()
+		const cresponse = await BlockAd.builder.sendConfidentialRequest()
 
-		expect(crq).to.have.property('requestRecord')
-		expect(crq).to.have
+		expect(cresponse).to.have.property('requestRecord')
+		expect(cresponse).to.have
 			.property('confidentialComputeResult')
 			.eq('0x0000000000000000000000005d7f7f0b1a1ade67d6e3add498d07289481e9d20')
 	}).timeout(100000)
 
 	it('confidential tx response', async () => {
-		const provider = new SuaveProvider('https://rpc.toliman.suave.flashbots.net')
+		const provider = new SuaveJsonRpcProvider('https://rpc.toliman.suave.flashbots.net')
 		const tx = await provider.getConfidentialTransaction('0x59ab298e560bff030915f0f61b1adc4bbcc4594d0f0c72fb7facd247532f68d1')
 		const expected = {
 			blockNumber: 431781,
@@ -114,7 +114,7 @@ describe('Confidential Provider/Wallet/Contract', async () => {
 	})
 
 	it('confidential wait', async () => {
-		const provider = new SuaveProvider('https://rpc.toliman.suave.flashbots.net')
+		const provider = new SuaveJsonRpcProvider('https://rpc.toliman.suave.flashbots.net')
 		const tx = await provider.getConfidentialTransaction('0x59ab298e560bff030915f0f61b1adc4bbcc4594d0f0c72fb7facd247532f68d1')
 		const receipt = await tx.wait()
 		expect(receipt).to.have.property('blockNumber').eq(0x696a5)
@@ -129,7 +129,7 @@ describe('Confidential Provider/Wallet/Contract', async () => {
 		const kettleUrl = 'https://rpc.toliman.suave.flashbots.net'
 		const blockadAbi = fetchJSON('./tests/abis/BlockAdAuction.json')
 
-		const provider = new SuaveProvider(kettleUrl)
+		const provider = new SuaveJsonRpcProvider(kettleUrl)
 		const wallet = new SuaveWallet(pk, provider)
 		const blockadAddress = '0xa60F1B5cB70c0523A086BbCbe132C8679085ea0E'
         
@@ -139,10 +139,39 @@ describe('Confidential Provider/Wallet/Contract', async () => {
 	}).timeout(100000)
 
 	it('get kettle address', async () => {
-		const provider = new SuaveProvider('https://rpc.toliman.suave.flashbots.net')
+		const provider = new SuaveJsonRpcProvider('https://rpc.toliman.suave.flashbots.net')
 		const kettle = await provider.getKettleAddress()
 		expect(kettle).to.eq('0xf579de142d98f8379c54105ac944fe133b7a17fe')
 	})
+
+	it('ccr no abi', async () => {
+		const pk = '1111111111111111111111111111111111111111111111111111111111111111'
+		const kettleUrl = 'https://rpc.toliman.suave.flashbots.net'
+		
+		const provider = new SuaveJsonRpcProvider(kettleUrl)
+		const wallet = new SuaveWallet(pk, provider)
+		const iface = new ethers.Interface(['function queryLatestPrice(string)', 'function DECIMALS()'])
+		const oracle_address = '0x48931D75dD8A617F6aC7176EE131F90AC779FEB0'
+
+		let cresponse = await wallet.sendCCR({
+			data: iface.encodeFunctionData('queryLatestPrice', ['ETHUSDT']),
+			to: oracle_address,
+			gas: 300_000,
+		})
+		expect(cresponse).to.have.property('requestRecord')
+		expect(cresponse).to.have.property('confidentialComputeResult')
+		let [ price_raw ] = ethers.AbiCoder.defaultAbiCoder()
+			.decode(['uint256'], cresponse.confidentialComputeResult)
+
+		let dec = await provider.call({
+			data: iface.encodeFunctionData('DECIMALS'),
+			to: oracle_address,
+		}).then(res => parseInt(res.slice(65, 66)[0]))
+
+		let price = parseInt(price_raw) / 10 ** dec
+		expect(price).to.be.above(100).and.below(20_000)
+		console.log(price)
+	}).timeout(10_000)
 
 })
 
@@ -152,7 +181,7 @@ describe('err handling', async () => {
 		const kettleUrl = 'https://rpc.toliman.suave.flashbots.net'
 		const blockadAbi = fetchJSON('./tests/abis/BlockAdAuction.json')
 
-		const provider = new SuaveProvider(kettleUrl)
+		const provider = new SuaveJsonRpcProvider(kettleUrl)
 		let emptyWallet: SuaveWallet
 		for (let i = 0; i < 10; i++) {
 			emptyWallet = SuaveWallet.random(provider)
@@ -181,7 +210,7 @@ describe('err handling', async () => {
 		const kettleUrl = 'https://rpc.toliman.suave.flashbots.net'
 		const blockadAbi = fetchJSON('./tests/abis/BlockAdAuction.json')
 
-		const provider = new SuaveProvider(kettleUrl)
+		const provider = new SuaveJsonRpcProvider(kettleUrl)
 		provider.setKettleAddress('0xdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef')
 		const wallet = new SuaveWallet(pk, provider)
 		const blockadAddress = '0xa60F1B5cB70c0523A086BbCbe132C8679085ea0E'
@@ -199,7 +228,7 @@ describe('err handling', async () => {
 		const kettleUrl = 'https://ethereum-holesky-rpc.publicnode.com'
 		const blockadAbi = fetchJSON('./tests/abis/BlockAdAuction.json')
 
-		const provider = new SuaveProvider(kettleUrl)
+		const provider = new SuaveJsonRpcProvider(kettleUrl)
 		provider.setKettleAddress('0xdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef')
 		const wallet = new SuaveWallet(pk, provider)
 		const blockadAddress = '0xa60F1B5cB70c0523A086BbCbe132C8679085ea0E'

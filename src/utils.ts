@@ -73,3 +73,5 @@ export function bundleToBytes(bundle: IBundle): string {
 	const confidentialDataBytes = ethers.AbiCoder.defaultAbiCoder().encode(['bytes'], [bundleBytes])
 	return confidentialDataBytes
 }
+
+export const DEFAULT_GAS_LIMIT = 1e7

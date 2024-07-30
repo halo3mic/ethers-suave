@@ -7,6 +7,7 @@ const chai_as_promised_1 = __importDefault(require("chai-as-promised"));
 const chai_1 = __importDefault(require("chai"));
 const fs_1 = __importDefault(require("fs"));
 const src_1 = require("../src");
+const ethers_1 = require("ethers");
 chai_1.default.use(chai_as_promised_1.default);
 const { expect } = chai_1.default;
 describe('Confidential Provider/Wallet/Contract', async () => {
@@ -15,7 +16,7 @@ describe('Confidential Provider/Wallet/Contract', async () => {
         const pk2 = '1111111111111111111111111111111111111111111111111111111111111112';
         const kettleUrl = 'https://rpc.toliman.suave.flashbots.net';
         const blockadAbi = fetchJSON('./tests/abis/BlockAdAuction.json');
-        const provider = new src_1.SuaveProvider(kettleUrl);
+        const provider = new src_1.SuaveJsonRpcProvider(kettleUrl);
         const wallet1 = new src_1.SuaveWallet(pk1, provider);
         const wallet2 = new src_1.SuaveWallet(pk2, provider);
         const blockadAddress = '0xa60F1B5cB70c0523A086BbCbe132C8679085ea0E';
@@ -26,7 +27,7 @@ describe('Confidential Provider/Wallet/Contract', async () => {
     }).timeout(100000);
     it('Non-confidential call / Contract with provider', async () => {
         const blockadAbi = fetchJSON('./tests/abis/BlockAdAuction.json');
-        const provider = new src_1.SuaveProvider('https://rpc.toliman.suave.flashbots.net');
+        const provider = new src_1.SuaveJsonRpcProvider('https://rpc.toliman.suave.flashbots.net');
         const blockadAddress = '0xa60F1B5cB70c0523A086BbCbe132C8679085ea0E';
         const BlockAd = new src_1.SuaveContract(blockadAddress, blockadAbi, provider);
         const isInitialized = await BlockAd.isInitialized();
@@ -36,18 +37,18 @@ describe('Confidential Provider/Wallet/Contract', async () => {
         const pk = '1111111111111111111111111111111111111111111111111111111111111111';
         const kettleUrl = 'https://rpc.toliman.suave.flashbots.net';
         const blockadAbi = fetchJSON('./tests/abis/BlockAdAuction.json');
-        const provider = new src_1.SuaveProvider(kettleUrl);
+        const provider = new src_1.SuaveJsonRpcProvider(kettleUrl);
         const wallet = new src_1.SuaveWallet(pk, provider);
         const blockadAddress = '0xa60F1B5cB70c0523A086BbCbe132C8679085ea0E';
         const BlockAd = new src_1.SuaveContract(blockadAddress, blockadAbi, wallet);
-        const crq = await BlockAd.builder.sendConfidentialRequest();
-        expect(crq).to.have.property('requestRecord');
-        expect(crq).to.have
+        const cresponse = await BlockAd.builder.sendConfidentialRequest();
+        expect(cresponse).to.have.property('requestRecord');
+        expect(cresponse).to.have
             .property('confidentialComputeResult')
             .eq('0x0000000000000000000000005d7f7f0b1a1ade67d6e3add498d07289481e9d20');
     }).timeout(100000);
     it('confidential tx response', async () => {
-        const provider = new src_1.SuaveProvider('https://rpc.toliman.suave.flashbots.net');
+        const provider = new src_1.SuaveJsonRpcProvider('https://rpc.toliman.suave.flashbots.net');
         const tx = await provider.getConfidentialTransaction('0x59ab298e560bff030915f0f61b1adc4bbcc4594d0f0c72fb7facd247532f68d1');
         const expected = {
             blockNumber: 431781,
@@ -102,7 +103,7 @@ describe('Confidential Provider/Wallet/Contract', async () => {
         }
     });
     it('confidential wait', async () => {
-        const provider = new src_1.SuaveProvider('https://rpc.toliman.suave.flashbots.net');
+        const provider = new src_1.SuaveJsonRpcProvider('https://rpc.toliman.suave.flashbots.net');
         const tx = await provider.getConfidentialTransaction('0x59ab298e560bff030915f0f61b1adc4bbcc4594d0f0c72fb7facd247532f68d1');
         const receipt = await tx.wait();
         expect(receipt).to.have.property('blockNumber').eq(0x696a5);
@@ -115,7 +116,7 @@ describe('Confidential Provider/Wallet/Contract', async () => {
         const pk = '1111111111111111111111111111111111111111111111111111111111111111';
         const kettleUrl = 'https://rpc.toliman.suave.flashbots.net';
         const blockadAbi = fetchJSON('./tests/abis/BlockAdAuction.json');
-        const provider = new src_1.SuaveProvider(kettleUrl);
+        const provider = new src_1.SuaveJsonRpcProvider(kettleUrl);
         const wallet = new src_1.SuaveWallet(pk, provider);
         const blockadAddress = '0xa60F1B5cB70c0523A086BbCbe132C8679085ea0E';
         const BlockAd = new src_1.SuaveContract(blockadAddress, blockadAbi, wallet);
@@ -123,16 +124,40 @@ describe('Confidential Provider/Wallet/Contract', async () => {
         await expect(crqPromise).to.eventually.be.fulfilled;
     }).timeout(100000);
     it('get kettle address', async () => {
-        const provider = new src_1.SuaveProvider('https://rpc.toliman.suave.flashbots.net');
+        const provider = new src_1.SuaveJsonRpcProvider('https://rpc.toliman.suave.flashbots.net');
         const kettle = await provider.getKettleAddress();
         expect(kettle).to.eq('0xf579de142d98f8379c54105ac944fe133b7a17fe');
     });
+    it('ccr no abi', async () => {
+        const pk = '1111111111111111111111111111111111111111111111111111111111111111';
+        const kettleUrl = 'https://rpc.toliman.suave.flashbots.net';
+        const provider = new src_1.SuaveJsonRpcProvider(kettleUrl);
+        const wallet = new src_1.SuaveWallet(pk, provider);
+        const iface = new ethers_1.ethers.Interface(['function queryLatestPrice(string)', 'function DECIMALS()']);
+        const oracle_address = '0x48931D75dD8A617F6aC7176EE131F90AC779FEB0';
+        let cresponse = await wallet.sendCCR({
+            data: iface.encodeFunctionData('queryLatestPrice', ['ETHUSDT']),
+            to: oracle_address,
+            gas: 300000,
+        });
+        expect(cresponse).to.have.property('requestRecord');
+        expect(cresponse).to.have.property('confidentialComputeResult');
+        let [price_raw] = ethers_1.ethers.AbiCoder.defaultAbiCoder()
+            .decode(['uint256'], cresponse.confidentialComputeResult);
+        let dec = await provider.call({
+            data: iface.encodeFunctionData('DECIMALS'),
+            to: oracle_address,
+        }).then(res => parseInt(res.slice(65, 66)[0]));
+        let price = parseInt(price_raw) / 10 ** dec;
+        expect(price).to.be.above(100).and.below(20000);
+        console.log(price);
+    }).timeout(10000);
 });
 describe('err handling', async () => {
     it('insufficient funds', async () => {
         const kettleUrl = 'https://rpc.toliman.suave.flashbots.net';
         const blockadAbi = fetchJSON('./tests/abis/BlockAdAuction.json');
-        const provider = new src_1.SuaveProvider(kettleUrl);
+        const provider = new src_1.SuaveJsonRpcProvider(kettleUrl);
         let emptyWallet;
         for (let i = 0; i < 10; i++) {
             emptyWallet = src_1.SuaveWallet.random(provider);
@@ -158,7 +183,7 @@ describe('err handling', async () => {
         const pk = '1111111111111111111111111111111111111111111111111111111111111122';
         const kettleUrl = 'https://rpc.toliman.suave.flashbots.net';
         const blockadAbi = fetchJSON('./tests/abis/BlockAdAuction.json');
-        const provider = new src_1.SuaveProvider(kettleUrl);
+        const provider = new src_1.SuaveJsonRpcProvider(kettleUrl);
         provider.setKettleAddress('0xdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef');
         const wallet = new src_1.SuaveWallet(pk, provider);
         const blockadAddress = '0xa60F1B5cB70c0523A086BbCbe132C8679085ea0E';
@@ -173,7 +198,7 @@ describe('err handling', async () => {
         const pk = '1111111111111111111111111111111111111111111111111111111111111122';
         const kettleUrl = 'https://ethereum-holesky-rpc.publicnode.com';
         const blockadAbi = fetchJSON('./tests/abis/BlockAdAuction.json');
-        const provider = new src_1.SuaveProvider(kettleUrl);
+        const provider = new src_1.SuaveJsonRpcProvider(kettleUrl);
         provider.setKettleAddress('0xdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef');
         const wallet = new src_1.SuaveWallet(pk, provider);
         const blockadAddress = '0xa60F1B5cB70c0523A086BbCbe132C8679085ea0E';

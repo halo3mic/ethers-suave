@@ -1,33 +1,44 @@
+import { DEFAULT_GAS_LIMIT } from './utils'
 import {
 	ConfidentialComputeRequest,
 	ConfidentialComputeRecord,
+	CRecordLike,
 } from './confidential-types'
 import { 
 	TransactionResponse,
 	TransactionReceipt, 
 	BaseContractMethod,
+	JsonRpcApiProvider,
+	resolveProperties,
 	JsonRpcProvider,
+	AbstractSigner,
+	BaseContract,
 	InterfaceAbi,
 	Interface, 
 	Contract, 
 	Wallet,
-	BaseContract,
-	ContractRunner,
 } from 'ethers'
 
 
-export class SuaveProvider extends JsonRpcProvider {
+export abstract class SuaveProvider extends JsonRpcApiProvider {
+	abstract getConfidentialTransaction(hash: string): Promise<ConfidentialTransactionResponse>
+	abstract getKettleAddress(): Promise<string>
+	abstract setKettleAddress(address: string): void
+}
+
+export class SuaveJsonRpcProvider extends JsonRpcProvider implements SuaveProvider {
 	#kettleAddress: string | undefined
 
 	constructor(url: string) {
 		super(url)
 	}
 
+	setKettleAddress(address: string) {
+		this.#kettleAddress = address
+	}
+
 	async getConfidentialTransaction(hash: string): Promise<ConfidentialTransactionResponse> {
 		const raw = await super.send('eth_getTransactionByHash', [hash])
-		if (raw === null) {
-			throw new Error(`Transaction not found: ${hash}`)
-		}
 		return new ConfidentialTransactionResponse(raw, this)
 	}
 
@@ -39,16 +50,27 @@ export class SuaveProvider extends JsonRpcProvider {
 		return this.#kettleAddress
 	}
 
-	setKettleAddress(address: string) {
-		this.#kettleAddress = address
-	}
-
 	async #getKettleAddress(): Promise<string> {
 		return this.send('eth_kettleAddress', []).then(r => r[0])
 	}
 
 }
-export class SuaveWallet extends Wallet {
+export abstract class SuaveSigner extends AbstractSigner {
+	abstract sprovider: SuaveProvider
+	abstract signCCR(ccr: ConfidentialComputeRequest): Promise<ConfidentialComputeRequest>
+	abstract sendCCR(crecord: CRecordLike, cinputs?: string): Promise<ConfidentialTransactionResponse>
+	abstract populateCRecord(crecord: CRecordLike): Promise<ConfidentialComputeRecord>
+}
+
+
+function checkProvider(signer: SuaveSigner, operation: string): SuaveProvider {
+	if (!signer.sprovider) {
+		throw new Error('missing provider for ' + operation)
+	}
+    return signer.sprovider
+}
+
+export class SuaveWallet extends Wallet implements SuaveSigner {
 	sprovider: SuaveProvider
 
 	constructor(privateKey: string, provider?: SuaveProvider) {
@@ -64,6 +86,46 @@ export class SuaveWallet extends Wallet {
 		return new SuaveWallet(wallet.privateKey, provider)
 	}
 
+	async signCCR(ccr: ConfidentialComputeRequest): Promise<ConfidentialComputeRequest> {
+		return ccr.signWithCallback((h) => this.signingKey.sign(h))
+	}
+
+	async populateCRecord(crecord: CRecordLike): Promise<ConfidentialComputeRecord> {
+        const provider = checkProvider(this, "populateTransaction");
+
+		const resolvedCRecord = await resolveProperties({
+			...crecord,
+			gas: BigInt(crecord.gas ?? DEFAULT_GAS_LIMIT),
+			nonce: crecord.nonce ?? this.getNonce("pending"),
+			gasPrice: crecord.gasPrice ?? provider.getFeeData().then(fd => fd.gasPrice),
+		});
+
+        const network = await provider.getNetwork()
+        if (resolvedCRecord.chainId == null) {
+            resolvedCRecord.chainId = network.chainId
+        } else if (resolvedCRecord.chainId !== network.chainId) {
+            throw new Error("chainId mismatch")
+        }
+        
+        const kettleAddress = await provider.getKettleAddress()
+        if (resolvedCRecord.kettleAddress == null) {
+            resolvedCRecord.kettleAddress = kettleAddress
+        } else if (resolvedCRecord.kettleAddress !== kettleAddress) {
+            throw new Error("kettleAddress mismatch")
+        }
+
+		return new ConfidentialComputeRecord(resolvedCRecord);
+	}
+
+	async sendCCR(crecord: CRecordLike, cinputs?: string): Promise<ConfidentialTransactionResponse> {
+		const popCRecord = await this.populateCRecord(crecord)
+		const ccr = new ConfidentialComputeRequest(popCRecord, cinputs)
+		const signedCCR = await this.signCCR(ccr)
+		const encoded = signedCCR.rlpEncode()
+		const txhash = await this.sprovider.send('eth_sendRawTransaction', [encoded])
+		return this.sprovider.getConfidentialTransaction(txhash)
+	}
+
 }
 
 interface ExtendedContractMethod extends BaseContractMethod<any[], any, any> {
@@ -71,43 +133,44 @@ interface ExtendedContractMethod extends BaseContractMethod<any[], any, any> {
     sendConfidentialRequest?: (args: any) => Promise<ConfidentialTransactionResponse>;
 }
 
+type SuaveContractRunner = SuaveWallet | SuaveProvider
+
 export class SuaveContract extends BaseContract {
 	[k: string]: any;
-	runner: ContractRunner
 	inner: Contract
 
-	constructor(address: string, abi: Interface | InterfaceAbi, runner: ContractRunner) {
+	constructor(address: string, abi: Interface | InterfaceAbi, runner: SuaveContractRunner) {
 		super(address, abi, runner)
 		this.inner = new Contract(address, abi, runner)
-		this.wallet = runner
 
 		return new Proxy(this, {
-			get: (target, prop, receiver): ExtendedContractMethod | any => {
+			get: (target, prop, receiver) => {
 				const item = Reflect.get(target.inner, prop, receiver)
 				if (typeof item === 'function' && target.inner.interface.hasFunction(prop as string)) {
 					const extendedMethod: ExtendedContractMethod = item
 
 					const prepareConfidentialRequest = async (...args: any[]): Promise<ConfidentialComputeRequest> => {
-						const overrides = args[args.length - 1] || {}
-						const contractTx = await extendedMethod.populateTransaction(...args)
-						contractTx.type = 0
-						contractTx.gasLimit = BigInt(overrides.gasLimit || 1e7)
-						const filledTx = await target.wallet.populateTransaction(contractTx)
-						const kettleAddress = await (runner.provider as SuaveProvider).getKettleAddress()
-						const crc = new ConfidentialComputeRecord(filledTx, kettleAddress)
-						const crq = new ConfidentialComputeRequest(crc, overrides.confidentialInputs)
-						return crq
+						let fragment = extendedMethod.getFragment(...args)
+						const raw_overrides = fragment.inputs.length + 1 === args.length ? args.pop() : {}
+						let crecord = { ...raw_overrides } as CRecordLike
+						crecord.data = this.interface.encodeFunctionData(fragment, args)
+						crecord.to = await this.getAddress()
+
+						const crecordPop = await this.#signer().populateCRecord(crecord)
+						return new ConfidentialComputeRequest(crecordPop, raw_overrides?.confidentialInputs)
 					}
 
 					extendedMethod.prepareConfidentialRequest = prepareConfidentialRequest
 					extendedMethod.sendConfidentialRequest = async (...args: any[]) => {
-						const crq = (await prepareConfidentialRequest(...args))
-							.signWithWallet(target.wallet)
-							.rlpEncode()
-						const sprovider = target.wallet.sprovider
-						const txhash = await sprovider.send('eth_sendRawTransaction', [crq])
-							.catch(target.#formatSubmissionError.bind(target))
+						const ccrq = await prepareConfidentialRequest(...args)
+						const ccrqSigned = await this.#signer().signCCR(ccrq)
+						const ccrqSignedRlp = ccrqSigned.rlpEncode()
+						
+						const sprovider = target.#provider()
+						const txhash = await sprovider.send('eth_sendRawTransaction', [ccrqSignedRlp])
+							.catch(target.#throwFormattedSubmissionError.bind(target))
 						const txRes = await sprovider.getConfidentialTransaction(txhash)
+
 						return txRes
 					}
 
@@ -139,7 +202,7 @@ export class SuaveContract extends BaseContract {
 		return new SuaveContract(address, this.inner.interface, this.wallet)
 	}
     
-	#formatSubmissionError(error: any) {
+	formatSubmissionError(error: any): string {
 		const errMsg = error?.error?.message
 		if (!errMsg) {
 			const err = error || 'Unknown error'
@@ -160,8 +223,36 @@ export class SuaveContract extends BaseContract {
 		const fargs = parsedErr.args.join('\', \'')
 		const fmsg = `${parsedErr.name}('${fargs}')\n`
 
+		return fmsg
+	}
+
+	#throwFormattedSubmissionError(error: any) {
+		const fmsg = this.formatSubmissionError(error)
 		throw new ConfidentialExecutionError(fmsg)
 	}
+
+	#provider(): SuaveProvider {
+		if (this.#runnerIsSigner()) {
+			return this.#signer().sprovider
+		} else {
+			return this.runner as SuaveProvider
+		}
+	}
+
+	#signer(): SuaveSigner {
+		if (!this.#runnerIsSigner()) {
+			throw new Error('runner is not a signer')
+		}
+		return this.runner as SuaveSigner
+	}
+
+	#runnerIsSigner(): boolean {
+		const runner = (this.runner as any)
+		return runner.sprovider && 
+			runner.signCCR && 
+			runner.populateCRecord
+	}
+
 }
 
 class ConfidentialExecutionError extends Error {

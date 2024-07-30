@@ -12,3 +12,4 @@ export declare function removeLeadingZeros(hex: string): string;
 export declare function txToBundleBytes(signedTx: string): string;
 export declare function txToBundle(signedTx: string): IBundle;
 export declare function bundleToBytes(bundle: IBundle): string;
+export declare const DEFAULT_GAS_LIMIT = 10000000;
