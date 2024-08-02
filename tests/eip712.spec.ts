@@ -1,6 +1,8 @@
+import chaiAsPromised from 'chai-as-promised'
 import chai from 'chai'
 import { ConfidentialComputeRecord } from '../src'
 
+chai.use(chaiAsPromised)
 const { expect } = chai
 
 
