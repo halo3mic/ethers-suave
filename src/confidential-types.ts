@@ -155,36 +155,36 @@ export class ConfidentialComputeRecord {
 	}
 
 	eip712Hash() {
-        const domain = {
-            name: "ConfidentialRecord",
-            verifyingContract: this.kettleAddress
-        };
-        const types = {
-            ConfidentialRecord: [
-                { name: "nonce", type: "uint64" },
-                { name: "gasPrice", type: "uint256" },
-                { name: "gas", type: "uint64" },
-                { name: "to", type: "address" },
-                { name: "value", type: "uint256" },
-                { name: "data", type: "bytes" },
-                { name: "kettleAddress", type: "address" },
-                { name: "confidentialInputsHash", type: "bytes32" }
-            ]
-        };
-        const message = {
-            nonce: this.nonce,
-            gasPrice: this.gasPrice,
-            gas: this.gas,
-            to: this.to,
-            value: this.value ?? 0,
-            data: this.data,
-            kettleAddress: this.kettleAddress,
-            confidentialInputsHash: this.confidentialInputsHash
-        };
-        const hash = ethers.TypedDataEncoder.hash(domain, types, message);
+		const domain = {
+			name: 'ConfidentialRecord',
+			verifyingContract: this.kettleAddress
+		}
+		const types = {
+			ConfidentialRecord: [
+				{ name: 'nonce', type: 'uint64' },
+				{ name: 'gasPrice', type: 'uint256' },
+				{ name: 'gas', type: 'uint64' },
+				{ name: 'to', type: 'address' },
+				{ name: 'value', type: 'uint256' },
+				{ name: 'data', type: 'bytes' },
+				{ name: 'kettleAddress', type: 'address' },
+				{ name: 'confidentialInputsHash', type: 'bytes32' }
+			]
+		}
+		const message = {
+			nonce: this.nonce,
+			gasPrice: this.gasPrice,
+			gas: this.gas,
+			to: this.to,
+			value: this.value ?? 0,
+			data: this.data,
+			kettleAddress: this.kettleAddress,
+			confidentialInputsHash: this.confidentialInputsHash
+		}
+		const hash = ethers.TypedDataEncoder.hash(domain, types, message)
 		
-        return hash;
-    }
+		return hash
+	}
 	
 }
 
