@@ -6,7 +6,7 @@ export function keccak256(x: string): string {
 }
 
 export function parseHexArg(arg: null | BigNumberish): string {
-	if (!arg) {
+	if (arg == null) {
 		return '0x'
 	}
 	if (typeof arg === 'object' && 'toHexString' in (arg as any)) {
@@ -19,10 +19,12 @@ export function parseHexArg(arg: null | BigNumberish): string {
 		return intToHex(arg)
 	case 'string':
 		if (ethers.isHexString(arg)) {
-			return arg == '0x00' ? '0x' : hexFillEven(arg)
+			return arg == '0x0' ? '0x' : hexFillEven(arg)
 		} else {
 			throw new Error(`Invalid hex string: ${arg}`)
 		}
+	case 'boolean':
+		return arg ? '0x01' : '0x'
 	default:
 		return '0x'
 	}
