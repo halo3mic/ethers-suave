@@ -10,9 +10,39 @@ export class ConfidentialComputeRequest {
 	confidentialComputeRecord: ConfidentialComputeRecord
 	readonly confidentialInputs: string
 
-	constructor(confidentialComputeRecord: ConfidentialComputeRecord, confidentialInputs: string = '0x') {
+	constructor(
+		confidentialComputeRecord: ConfidentialComputeRecord, 
+		confidentialInputs: string = '0x'
+	) {
 		this.confidentialComputeRecord = confidentialComputeRecord
 		this.confidentialInputs = confidentialInputs
+		this.confidentialComputeRecord.confidentialInputsHash = keccak256(confidentialInputs)
+	}
+
+	async signWithAsyncCallback(
+		callback: (hash: string) => Promise<Signature>,
+		useEIP712?: boolean
+	): Promise<ConfidentialComputeRequest> {
+		return callback(this.#hash(useEIP712)).then((sig) => {
+			this.confidentialComputeRecord.signature = parseSignature(sig)
+			return this
+		})
+	}
+
+	signWithCallback(
+		callback: (hash: string) => Signature,
+		useEIP712?: boolean
+	): ConfidentialComputeRequest {
+		this.confidentialComputeRecord.signature = parseSignature(callback(this.#hash(useEIP712)))
+		return this
+	}
+
+	signWithWallet(wallet: Wallet, useEIP712?: boolean): ConfidentialComputeRequest {
+		return this.signWithCallback((h) => wallet.signingKey.sign(h), useEIP712)
+	}
+
+	signWithPK(pk: string, useEIP712?: boolean): ConfidentialComputeRequest {
+		return this.signWithWallet(new Wallet(pk), useEIP712)
 	}
 
 	rlpEncode(): string {
@@ -42,46 +72,9 @@ export class ConfidentialComputeRequest {
 		return encodedWithPrefix
 	}
 
-	async signWithAsyncCallback(callback: (hash: string) => Promise<Signature>): Promise<ConfidentialComputeRequest> {
-		return callback(this.#hash()).then((sig) => {
-			this.confidentialComputeRecord.signature = parseSignature(sig)
-			return this
-		})
-	}
-
-	signWithCallback(callback: (hash: string) => Signature): ConfidentialComputeRequest {
-		this.confidentialComputeRecord.signature = parseSignature(callback(this.#hash()))
-		return this
-	}
-
-	signWithWallet(wallet: Wallet): ConfidentialComputeRequest {
-		return this.signWithCallback((h) => wallet.signingKey.sign(h))
-	}
-
-	signWithPK(pk: string): ConfidentialComputeRequest {
-		return this.signWithWallet(new Wallet(pk))
-	}
-
-	#hash(): string {
-		const confidentialInputsHash = keccak256(this.confidentialInputs)
-		this.confidentialComputeRecord.confidentialInputsHash = confidentialInputsHash
-		const ccr = this.confidentialComputeRecord
-
-		const elements = [
-			ccr.kettleAddress, 
-			confidentialInputsHash, 
-			ccr.nonce, 
-			ccr.gasPrice, 
-			ccr.gas, 
-			ccr.to,
-			ccr.value,
-			ccr.data,
-		].map(parseHexArg)
-		const rlpEncoded = ethers.encodeRlp(elements).slice(2)
-		const encodedWithPrefix = CONFIDENTIAL_COMPUTE_RECORD_TYPE + rlpEncoded
-		const hash = keccak256(encodedWithPrefix)
-
-		return hash
+	#hash(useEIP712: boolean = false): string {
+		const crecord = this.confidentialComputeRecord
+		return useEIP712 ? crecord.eip712Hash() : crecord.hash()
 	}
 
 }
@@ -143,6 +136,56 @@ export class ConfidentialComputeRecord {
 			throw new Error(`Missing ${key}`)
 		}
 	}
+
+	hash() {
+		const elements = [
+			this.kettleAddress, 
+			this.confidentialInputsHash, 
+			this.nonce, 
+			this.gasPrice, 
+			this.gas, 
+			this.to,
+			this.value,
+			this.data,
+		].map(parseHexArg)
+		const rlpEncoded = ethers.encodeRlp(elements).slice(2)
+		const encodedWithPrefix = CONFIDENTIAL_COMPUTE_RECORD_TYPE + rlpEncoded
+		const hash = keccak256(encodedWithPrefix)
+		return hash
+	}
+
+	eip712Hash() {
+        const domain = {
+            name: "ConfidentialRecord",
+            verifyingContract: this.kettleAddress
+        };
+        const types = {
+            ConfidentialRecord: [
+                { name: "nonce", type: "uint64" },
+                { name: "gasPrice", type: "uint256" },
+                { name: "gas", type: "uint64" },
+                { name: "to", type: "address" },
+                { name: "value", type: "uint256" },
+                { name: "data", type: "bytes" },
+                { name: "kettleAddress", type: "address" },
+                { name: "confidentialInputsHash", type: "bytes32" }
+            ]
+        };
+        const message = {
+            nonce: this.nonce,
+            gasPrice: this.gasPrice,
+            gas: this.gas,
+            to: this.to,
+            value: this.value ?? 0,
+            data: this.data,
+            kettleAddress: this.kettleAddress,
+            confidentialInputsHash: this.confidentialInputsHash
+        };
+        const hash = ethers.TypedDataEncoder.hash(domain, types, message);
+		
+        return hash;
+    }
+	
 }
 
 function parseSignature(sig: Signature): SigSplit {
