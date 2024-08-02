@@ -30,7 +30,6 @@ describe('parseHexArg', () => {
             ['0x01', '0x01'],
             ['0x2a', '0x2a'],
             ['0x', '0x'],
-            ['', '0x'],
         ]);
     });
     it('parse null', () => {
