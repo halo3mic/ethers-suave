@@ -4,11 +4,11 @@ export declare class ConfidentialComputeRequest {
     confidentialComputeRecord: ConfidentialComputeRecord;
     readonly confidentialInputs: string;
     constructor(confidentialComputeRecord: ConfidentialComputeRecord, confidentialInputs?: string);
+    signWithAsyncCallback(callback: (hash: string) => Promise<Signature>, useEIP712?: boolean): Promise<ConfidentialComputeRequest>;
+    signWithCallback(callback: (hash: string) => Signature, useEIP712?: boolean): ConfidentialComputeRequest;
+    signWithWallet(wallet: Wallet, useEIP712?: boolean): ConfidentialComputeRequest;
+    signWithPK(pk: string, useEIP712?: boolean): ConfidentialComputeRequest;
     rlpEncode(): string;
-    signWithAsyncCallback(callback: (hash: string) => Promise<Signature>): Promise<ConfidentialComputeRequest>;
-    signWithCallback(callback: (hash: string) => Signature): ConfidentialComputeRequest;
-    signWithWallet(wallet: Wallet): ConfidentialComputeRequest;
-    signWithPK(pk: string): ConfidentialComputeRequest;
 }
 export interface CRecordLike {
     to?: string;
@@ -36,6 +36,8 @@ export declare class ConfidentialComputeRecord {
     signature: null | SigSplit;
     constructor(crecord: CRecordLike);
     checkFields(keys: Array<string>): void;
+    hash(): string;
+    eip712Hash(): string;
 }
 type SigSplit = {
     r: string;

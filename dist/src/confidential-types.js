@@ -15,6 +15,23 @@ class ConfidentialComputeRequest {
         _ConfidentialComputeRequest_instances.add(this);
         this.confidentialComputeRecord = confidentialComputeRecord;
         this.confidentialInputs = confidentialInputs;
+        this.confidentialComputeRecord.confidentialInputsHash = (0, utils_1.keccak256)(confidentialInputs);
+    }
+    async signWithAsyncCallback(callback, useEIP712) {
+        return callback(__classPrivateFieldGet(this, _ConfidentialComputeRequest_instances, "m", _ConfidentialComputeRequest_hash).call(this, useEIP712)).then((sig) => {
+            this.confidentialComputeRecord.signature = parseSignature(sig);
+            return this;
+        });
+    }
+    signWithCallback(callback, useEIP712) {
+        this.confidentialComputeRecord.signature = parseSignature(callback(__classPrivateFieldGet(this, _ConfidentialComputeRequest_instances, "m", _ConfidentialComputeRequest_hash).call(this, useEIP712)));
+        return this;
+    }
+    signWithWallet(wallet, useEIP712) {
+        return this.signWithCallback((h) => wallet.signingKey.sign(h), useEIP712);
+    }
+    signWithPK(pk, useEIP712) {
+        return this.signWithWallet(new ethers_1.Wallet(pk), useEIP712);
     }
     rlpEncode() {
         const crecord = this.confidentialComputeRecord;
@@ -41,42 +58,11 @@ class ConfidentialComputeRequest {
         const encodedWithPrefix = const_1.CONFIDENTIAL_COMPUTE_REQUEST_TYPE + rlpEncoded;
         return encodedWithPrefix;
     }
-    async signWithAsyncCallback(callback) {
-        return callback(__classPrivateFieldGet(this, _ConfidentialComputeRequest_instances, "m", _ConfidentialComputeRequest_hash).call(this)).then((sig) => {
-            this.confidentialComputeRecord.signature = parseSignature(sig);
-            return this;
-        });
-    }
-    signWithCallback(callback) {
-        this.confidentialComputeRecord.signature = parseSignature(callback(__classPrivateFieldGet(this, _ConfidentialComputeRequest_instances, "m", _ConfidentialComputeRequest_hash).call(this)));
-        return this;
-    }
-    signWithWallet(wallet) {
-        return this.signWithCallback((h) => wallet.signingKey.sign(h));
-    }
-    signWithPK(pk) {
-        return this.signWithWallet(new ethers_1.Wallet(pk));
-    }
 }
 exports.ConfidentialComputeRequest = ConfidentialComputeRequest;
-_ConfidentialComputeRequest_instances = new WeakSet(), _ConfidentialComputeRequest_hash = function _ConfidentialComputeRequest_hash() {
-    const confidentialInputsHash = (0, utils_1.keccak256)(this.confidentialInputs);
-    this.confidentialComputeRecord.confidentialInputsHash = confidentialInputsHash;
-    const ccr = this.confidentialComputeRecord;
-    const elements = [
-        ccr.kettleAddress,
-        confidentialInputsHash,
-        ccr.nonce,
-        ccr.gasPrice,
-        ccr.gas,
-        ccr.to,
-        ccr.value,
-        ccr.data,
-    ].map(utils_1.parseHexArg);
-    const rlpEncoded = ethers_1.ethers.encodeRlp(elements).slice(2);
-    const encodedWithPrefix = const_1.CONFIDENTIAL_COMPUTE_RECORD_TYPE + rlpEncoded;
-    const hash = (0, utils_1.keccak256)(encodedWithPrefix);
-    return hash;
+_ConfidentialComputeRequest_instances = new WeakSet(), _ConfidentialComputeRequest_hash = function _ConfidentialComputeRequest_hash(useEIP712 = false) {
+    const crecord = this.confidentialComputeRecord;
+    return useEIP712 ? crecord.eip712Hash() : crecord.hash();
 };
 class ConfidentialComputeRecord {
     constructor(crecord) {
@@ -103,6 +89,53 @@ class ConfidentialComputeRecord {
         for (const key of keys) {
             __classPrivateFieldGet(this, _ConfidentialComputeRecord_instances, "m", _ConfidentialComputeRecord_checkField).call(this, key);
         }
+    }
+    hash() {
+        const elements = [
+            this.kettleAddress,
+            this.confidentialInputsHash,
+            this.nonce,
+            this.gasPrice,
+            this.gas,
+            this.to,
+            this.value,
+            this.data,
+        ].map(utils_1.parseHexArg);
+        const rlpEncoded = ethers_1.ethers.encodeRlp(elements).slice(2);
+        const encodedWithPrefix = const_1.CONFIDENTIAL_COMPUTE_RECORD_TYPE + rlpEncoded;
+        const hash = (0, utils_1.keccak256)(encodedWithPrefix);
+        return hash;
+    }
+    eip712Hash() {
+        var _a;
+        const domain = {
+            name: 'ConfidentialRecord',
+            verifyingContract: this.kettleAddress
+        };
+        const types = {
+            ConfidentialRecord: [
+                { name: 'nonce', type: 'uint64' },
+                { name: 'gasPrice', type: 'uint256' },
+                { name: 'gas', type: 'uint64' },
+                { name: 'to', type: 'address' },
+                { name: 'value', type: 'uint256' },
+                { name: 'data', type: 'bytes' },
+                { name: 'kettleAddress', type: 'address' },
+                { name: 'confidentialInputsHash', type: 'bytes32' }
+            ]
+        };
+        const message = {
+            nonce: this.nonce,
+            gasPrice: this.gasPrice,
+            gas: this.gas,
+            to: this.to,
+            value: (_a = this.value) !== null && _a !== void 0 ? _a : 0,
+            data: this.data,
+            kettleAddress: this.kettleAddress,
+            confidentialInputsHash: this.confidentialInputsHash
+        };
+        const hash = ethers_1.ethers.TypedDataEncoder.hash(domain, types, message);
+        return hash;
     }
 }
 exports.ConfidentialComputeRecord = ConfidentialComputeRecord;
